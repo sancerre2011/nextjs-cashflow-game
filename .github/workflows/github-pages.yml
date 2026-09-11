@@ -33,14 +33,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Enable pnpm via corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build static export
-        run: pnpm build
+      - name: Install dependencies and build
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
