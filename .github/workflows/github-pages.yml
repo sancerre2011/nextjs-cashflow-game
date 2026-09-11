@@ -35,9 +35,8 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          corepack enable
-          pnpm install --frozen-lockfile
-          pnpm build
+          npx pnpm@12.3.4 install --frozen-lockfile
+          npx pnpm@12.3.4 build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
