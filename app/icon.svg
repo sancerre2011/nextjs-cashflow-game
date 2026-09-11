@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Cashflow icon">
+  <rect width="128" height="128" rx="28" fill="#0f172a"/>
+  <circle cx="64" cy="64" r="41" fill="#f8fafc" opacity="0.12"/>
+  <path d="M37 84V44h18.6c12.2 0 18.8 6.1 18.8 16.1S68.6 76.3 56.6 76.3H48.5V84H37zm11.5-11.4h7.6c5.8 0 9.1-2.8 9.1-8.5s-3.3-8.5-9.1-8.5h-7.6v17Z" fill="#f8fafc"/>
+  <path d="M77 84V44h11.7v26.7H99V84H77Z" fill="#f8fafc" opacity="0.9"/>
+</svg>
