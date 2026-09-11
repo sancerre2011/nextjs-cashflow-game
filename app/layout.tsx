@@ -4,6 +4,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
+const basePath = process.env.SITE_BASE_PATH ?? "";
+const siteUrl = process.env.SITE_URL ?? "";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -17,7 +20,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Cashflow Player Setup",
   description: "Mobile-first player setup for the Cashflow game MVP.",
-  manifest: "/manifest.webmanifest",
+  manifest: `${basePath}/manifest.webmanifest`,
+  metadataBase: siteUrl ? new URL(`${siteUrl}${basePath}`) : undefined,
 };
 
 export const viewport: Viewport = {
