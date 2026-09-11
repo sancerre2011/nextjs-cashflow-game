@@ -388,6 +388,7 @@ function ExpenseSection({
 }
 
 function AssetSection({
+  accountBalance,
   savings,
   setSavings,
   preciousMetals,
@@ -401,6 +402,7 @@ function AssetSection({
   onAssetPurchase,
   onAssetSale,
 }: {
+  accountBalance: number;
   savings: string;
   setSavings: Dispatch<SetStateAction<string>>;
   preciousMetals: PreciousMetalEntry[];
@@ -457,7 +459,6 @@ function AssetSection({
     () => parseNumericValue(sellRealEstatePrice) - selectedRealEstateLiability,
     [sellRealEstatePrice, selectedRealEstateLiability]
   );
-
   const [preciousDraft, setPreciousDraft] = useState<PreciousMetalEntry>({
     id: "",
     name: "",
@@ -482,6 +483,12 @@ function AssetSection({
     cost: "",
     cashFlow: "",
   });
+  const preciousPurchaseAmount = useMemo(() => parseNumericValue(preciousDraft.value), [preciousDraft.value]);
+  const fundPurchaseAmount = useMemo(() => parseNumericValue(fundDraft.value), [fundDraft.value]);
+  const realEstatePurchaseAmount = useMemo(
+    () => parseNumericValue(realEstateDraft.downPayment),
+    [realEstateDraft.downPayment]
+  );
 
   const updatePreciousDraft = (field: keyof PreciousMetalEntry, value: string) => {
     setPreciousDraft((current) => {
@@ -969,6 +976,9 @@ function AssetSection({
                   />
                 </div>
                 {preciousBuyError ? <p className="text-sm text-destructive">{preciousBuyError}</p> : null}
+                {!preciousBuyError && preciousPurchaseAmount > accountBalance ? (
+                  <p className="text-sm text-destructive">Not enough balance.</p>
+                ) : null}
               </div>
 
               <DialogFooter className="pt-2">
@@ -982,7 +992,11 @@ function AssetSection({
                 >
                   Cancel
                 </Button>
-                <Button type="button" onClick={savePreciousMetal}>
+                <Button
+                  type="button"
+                  onClick={savePreciousMetal}
+                  disabled={!preciousDraft.name.trim() || preciousPurchaseAmount <= 0 || preciousPurchaseAmount > accountBalance}
+                >
                   Save
                 </Button>
               </DialogFooter>
@@ -1189,6 +1203,9 @@ function AssetSection({
                   />
                 </div>
                 {fundBuyError ? <p className="text-sm text-destructive">{fundBuyError}</p> : null}
+                {!fundBuyError && fundPurchaseAmount > accountBalance ? (
+                  <p className="text-sm text-destructive">Not enough balance.</p>
+                ) : null}
               </div>
 
               <DialogFooter className="pt-2">
@@ -1202,7 +1219,11 @@ function AssetSection({
                 >
                   Cancel
                 </Button>
-                <Button type="button" onClick={saveFundEntry}>
+                <Button
+                  type="button"
+                  onClick={saveFundEntry}
+                  disabled={!fundDraft.name.trim() || fundPurchaseAmount <= 0 || fundPurchaseAmount > accountBalance}
+                >
                   Save
                 </Button>
               </DialogFooter>
@@ -1396,6 +1417,9 @@ function AssetSection({
                   />
                 </div>
                 {realEstateBuyError ? <p className="text-sm text-destructive">{realEstateBuyError}</p> : null}
+                {!realEstateBuyError && realEstatePurchaseAmount > accountBalance ? (
+                  <p className="text-sm text-destructive">Not enough balance.</p>
+                ) : null}
               </div>
 
               <DialogFooter className="pt-2">
@@ -1409,7 +1433,15 @@ function AssetSection({
                 >
                   Cancel
                 </Button>
-                <Button type="button" onClick={saveRealEstateAsset}>
+                <Button
+                  type="button"
+                  onClick={saveRealEstateAsset}
+                  disabled={
+                    !realEstateDraft.name.trim()
+                    || realEstatePurchaseAmount <= 0
+                    || realEstatePurchaseAmount > accountBalance
+                  }
+                >
                   Save
                 </Button>
               </DialogFooter>
@@ -2771,6 +2803,7 @@ export default function Home() {
 
         {selectedAvatarId && activeTab === "assets" && !isRatraceMode && (
           <AssetSection
+            accountBalance={accountBalance}
             savings={savings}
             setSavings={setSavings}
             preciousMetals={preciousMetals}
