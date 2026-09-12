@@ -1,18 +1,37 @@
 "use client";
 
 import {
+  Briefcase,
   Building2,
+  Cog,
   CircleDollarSign,
+  GraduationCap,
+  HeartPulse,
   Landmark,
   LayoutDashboard,
   Menu,
+  Plane,
   Plus,
   Scale,
+  Shield,
+  Stethoscope,
   TrendingDown,
+  Truck,
   UserCircle2,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +46,29 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const getCurrencyFormatter = () =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+
+type I18nContextValue = {
+  t: (value: string) => string;
+  currencyFormatter: Intl.NumberFormat;
+  timeLocale: string;
+};
+
+const I18nContext = createContext<I18nContextValue | null>(null);
+
+const useI18n = () => {
+  const context = useContext(I18nContext);
+  if (!context) {
+    throw new Error("useI18n must be used within I18nContext.Provider");
+  }
+  return context;
+};
 
 const tabs = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -139,12 +181,6 @@ const liabilityExpenseMapping: Partial<Record<LiabilityKey, ExpenseKey>> = {
   creditCardLoan: "creditCard",
 };
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
 const initialExpenseValues: Record<ExpenseKey, string> = {
   taxes: "",
   mortgageRent: "",
@@ -164,6 +200,281 @@ const initialLiabilityValues: Record<LiabilityKey, string> = {
 };
 
 const avatarPresets: AvatarPreset[] = [
+  {
+    id: "janitor",
+    name: "Janitor",
+    salary: "1600",
+    expenses: {
+      taxes: "300",
+      mortgageRent: "200",
+      studentLoan: "",
+      carLoan: "100",
+      creditCard: "100",
+      others: "300",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "20000",
+      studentLoan: "0",
+      carLoan: "4000",
+      creditCardLoan: "3000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "100",
+    savings: "600",
+    initialBalance: 600,
+  },
+  {
+    id: "nurse",
+    name: "Nurse",
+    salary: "3100",
+    expenses: {
+      taxes: "600",
+      mortgageRent: "400",
+      studentLoan: "100",
+      carLoan: "100",
+      creditCard: "200",
+      others: "600",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "47000",
+      studentLoan: "6000",
+      carLoan: "5000",
+      creditCardLoan: "4000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "200",
+    savings: "500",
+    initialBalance: 500,
+  },
+  {
+    id: "truck-driver",
+    name: "Truck Driver",
+    salary: "2500",
+    expenses: {
+      taxes: "500",
+      mortgageRent: "400",
+      studentLoan: "",
+      carLoan: "100",
+      creditCard: "100",
+      others: "600",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "38000",
+      studentLoan: "",
+      carLoan: "4000",
+      creditCardLoan: "3000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "200",
+    savings: "800",
+    initialBalance: 800,
+  },
+  {
+    id: "police-officer",
+    name: "Police Officer",
+    salary: "3000",
+    expenses: {
+      taxes: "600",
+      mortgageRent: "400",
+      studentLoan: "",
+      carLoan: "100",
+      creditCard: "100",
+      others: "700",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "46000",
+      studentLoan: "",
+      carLoan: "5000",
+      creditCardLoan: "3000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "200",
+    savings: "500",
+    initialBalance: 500,
+  },
+  {
+    id: "manager",
+    name: "Manager",
+    salary: "4600",
+    expenses: {
+      taxes: "900",
+      mortgageRent: "700",
+      studentLoan: "100",
+      carLoan: "100",
+      creditCard: "200",
+      others: "1000",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "75000",
+      studentLoan: "12000",
+      carLoan: "6000",
+      creditCardLoan: "4000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "300",
+    savings: "400",
+    initialBalance: 400,
+  },
+  {
+    id: "doctor",
+    name: "Doctor",
+    salary: "13200",
+    expenses: {
+      taxes: "3200",
+      mortgageRent: "1900",
+      studentLoan: "700",
+      carLoan: "300",
+      creditCard: "200",
+      others: "2000",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "202000",
+      studentLoan: "150000",
+      carLoan: "19000",
+      creditCardLoan: "10000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "700",
+    savings: "3500",
+    initialBalance: 3500,
+  },
+  {
+    id: "engineer",
+    name: "Engineer",
+    salary: "4900",
+    expenses: {
+      taxes: "1000",
+      mortgageRent: "700",
+      studentLoan: "100",
+      carLoan: "200",
+      creditCard: "200",
+      others: "1000",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "75000",
+      studentLoan: "12000",
+      carLoan: "7000",
+      creditCardLoan: "5000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "200",
+    savings: "400",
+    initialBalance: 400,
+  },
+  {
+    id: "teacher",
+    name: "Teacher",
+    salary: "3300",
+    expenses: {
+      taxes: "500",
+      mortgageRent: "500",
+      studentLoan: "100",
+      carLoan: "100",
+      creditCard: "200",
+      others: "700",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "50000",
+      studentLoan: "12000",
+      carLoan: "5000",
+      creditCardLoan: "4000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "200",
+    savings: "400",
+    initialBalance: 400,
+  },
+  {
+    id: "secretary",
+    name: "Secretary",
+    salary: "2500",
+    expenses: {
+      taxes: "500",
+      mortgageRent: "400",
+      studentLoan: "",
+      carLoan: "100",
+      creditCard: "100",
+      others: "600",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "38000",
+      studentLoan: "",
+      carLoan: "4000",
+      creditCardLoan: "3000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "100",
+    savings: "700",
+    initialBalance: 700,
+  },
+  {
+    id: "mechanic",
+    name: "Mechanic",
+    salary: "2000",
+    expenses: {
+      taxes: "400",
+      mortgageRent: "300",
+      studentLoan: "",
+      carLoan: "100",
+      creditCard: "100",
+      others: "400",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "31000",
+      studentLoan: "",
+      carLoan: "3000",
+      creditCardLoan: "3000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "100",
+    savings: "700",
+    initialBalance: 700,
+  },
+  {
+    id: "pilot",
+    name: "Pilot",
+    salary: "9500",
+    expenses: {
+      taxes: "2000",
+      mortgageRent: "1000",
+      studentLoan: "",
+      carLoan: "300",
+      creditCard: "700",
+      others: "2000",
+      bankLoan: "",
+    },
+    liabilities: {
+      homeMortgage: "90000",
+      studentLoan: "",
+      carLoan: "15000",
+      creditCardLoan: "22000",
+      bankLoan: "",
+    },
+    childCount: "0",
+    childCost: "400",
+    savings: "2500",
+    initialBalance: 2500,
+  },
   {
     id: "attorney",
     name: "Attorney",
@@ -224,12 +535,20 @@ const readStoredGameState = () => {
       return getDefaultGameState();
     }
 
-    const parsed = JSON.parse(storedState) as Partial<ReturnType<typeof getDefaultGameState>>;
+    const parsed = JSON.parse(storedState) as Partial<
+      ReturnType<typeof getDefaultGameState>
+    >;
     return {
       ...getDefaultGameState(),
       ...parsed,
-      expenseValues: { ...initialExpenseValues, ...(parsed.expenseValues ?? {}) },
-      liabilityValues: { ...initialLiabilityValues, ...(parsed.liabilityValues ?? {}) },
+      expenseValues: {
+        ...initialExpenseValues,
+        ...(parsed.expenseValues ?? {}),
+      },
+      liabilityValues: {
+        ...initialLiabilityValues,
+        ...(parsed.liabilityValues ?? {}),
+      },
       childCount: parsed.childCount ?? "0",
       activeTab: parsed.activeTab ?? "dashboard",
     };
@@ -244,44 +563,71 @@ const parseNumericValue = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const isMultipleOfThousand = (value: number) => Number.isInteger(value) && value % 1000 === 0;
+const isMultipleOfThousand = (value: number) =>
+  Number.isInteger(value) && value % 1000 === 0;
 
 const createEntryId = () => Math.random().toString(36).slice(2, 10);
 
 const getAvatarIcon = (avatarId: string): LucideIcon => {
-  if (avatarId === "attorney") return Scale;
-  return UserCircle2;
+  switch (avatarId) {
+    case "janitor":
+      return Wrench;
+    case "nurse":
+      return HeartPulse;
+    case "truck-driver":
+      return Truck;
+    case "police-officer":
+      return Shield;
+    case "manager":
+      return Briefcase;
+    case "doctor":
+      return Stethoscope;
+    case "engineer":
+      return Cog;
+    case "teacher":
+      return GraduationCap;
+    case "secretary":
+      return LayoutDashboard;
+    case "mechanic":
+      return Wrench;
+    case "pilot":
+      return Plane;
+    case "attorney":
+      return Scale;
+    default:
+      return UserCircle2;
+  }
 };
 
 const getTotalExpenses = (
   expenseValues: Record<ExpenseKey, string>,
   childCount: ChildCount,
-  childCost: string
+  childCost: string,
 ) => {
   const fixedTotal = fixedExpenses.reduce((sum, expense) => {
     return sum + parseNumericValue(expenseValues[expense.key]);
   }, 0);
 
-  return fixedTotal + (Number.parseInt(childCount, 10) || 0) * parseNumericValue(childCost);
+  return (
+    fixedTotal +
+    (Number.parseInt(childCount, 10) || 0) * parseNumericValue(childCost)
+  );
 };
 
 function ExpenseSection({
   expenseValues,
-  setExpenseValues,
   childCount,
   setChildCount,
   childCost,
-  setChildCost,
   totalExpenses,
 }: {
   expenseValues: Record<ExpenseKey, string>;
-  setExpenseValues: Dispatch<SetStateAction<Record<ExpenseKey, string>>>;
   childCount: ChildCount;
   setChildCount: Dispatch<SetStateAction<ChildCount>>;
   childCost: string;
-  setChildCost: Dispatch<SetStateAction<string>>;
   totalExpenses: number;
 }) {
+  const { t, currencyFormatter } = useI18n();
 
   const childTotal = useMemo(() => {
     const count = Number.parseInt(childCount, 10) || 0;
@@ -289,18 +635,11 @@ function ExpenseSection({
     return count * cost;
   }, [childCost, childCount]);
 
-  const updateExpenseValue = (key: ExpenseKey, value: string) => {
-    setExpenseValues((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  };
-
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Total monthly expenses
+          {t("Total monthly expenses")}
         </div>
         <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
           {currencyFormatter.format(totalExpenses)}
@@ -313,8 +652,11 @@ function ExpenseSection({
             key={expense.key}
             className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
           >
-            <label htmlFor={expense.key} className="flex-1 text-sm font-medium text-foreground">
-              {expense.label}
+            <label
+              htmlFor={expense.key}
+              className="flex-1 text-sm font-medium text-foreground"
+            >
+              {t(expense.label)}
             </label>
             <div className="flex w-[120px] items-center justify-end">
               <Input
@@ -324,8 +666,8 @@ function ExpenseSection({
                 min="0"
                 step="100"
                 value={expenseValues[expense.key]}
-                onChange={(event) => updateExpenseValue(expense.key, event.target.value)}
                 placeholder="0"
+                readOnly
                 className="h-9 rounded-lg text-right text-sm"
               />
             </div>
@@ -334,8 +676,12 @@ function ExpenseSection({
 
         <div className="rounded-xl border border-border bg-muted/50 px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 text-sm font-medium text-foreground">Child expenses</div>
-            <div className="text-sm font-semibold text-foreground">{currencyFormatter.format(childTotal)}</div>
+            <div className="flex-1 text-sm font-medium text-foreground">
+              {t("Child expenses")}
+            </div>
+            <div className="text-sm font-semibold text-foreground">
+              {currencyFormatter.format(childTotal)}
+            </div>
           </div>
 
           <div className="mt-3 grid grid-cols-[1fr_40px_1fr] items-end gap-2">
@@ -344,12 +690,14 @@ function ExpenseSection({
                 htmlFor="child-count"
                 className="mb-1 block text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
               >
-                Children
+                {t("Children")}
               </Label>
               <select
                 id="child-count"
                 value={childCount}
-                onChange={(event) => setChildCount(event.target.value as ChildCount)}
+                onChange={(event) =>
+                  setChildCount(event.target.value as ChildCount)
+                }
                 className="flex h-9 w-full rounded-lg border border-input bg-background px-2 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="0">0</option>
@@ -359,14 +707,16 @@ function ExpenseSection({
               </select>
             </div>
 
-            <div className="pb-2 text-center text-base font-semibold text-muted-foreground">x</div>
+            <div className="pb-2 text-center text-base font-semibold text-muted-foreground">
+              x
+            </div>
 
             <div>
               <Label
                 htmlFor="child-cost"
                 className="mb-1 block text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
               >
-                Cost
+                {t("Cost")}
               </Label>
               <Input
                 id="child-cost"
@@ -375,8 +725,8 @@ function ExpenseSection({
                 min="0"
                 step="50"
                 value={childCost}
-                onChange={(event) => setChildCost(event.target.value)}
                 placeholder="0"
+                readOnly
                 className="h-9 text-sm"
               />
             </div>
@@ -390,7 +740,6 @@ function ExpenseSection({
 function AssetSection({
   accountBalance,
   savings,
-  setSavings,
   preciousMetals,
   setPreciousMetals,
   funds,
@@ -404,7 +753,6 @@ function AssetSection({
 }: {
   accountBalance: number;
   savings: string;
-  setSavings: Dispatch<SetStateAction<string>>;
   preciousMetals: PreciousMetalEntry[];
   setPreciousMetals: Dispatch<SetStateAction<PreciousMetalEntry[]>>;
   funds: FundEntry[];
@@ -416,6 +764,7 @@ function AssetSection({
   onAssetPurchase: (amount: number, label: string) => boolean;
   onAssetSale: (amount: number, label: string) => void;
 }) {
+  const { t, currencyFormatter } = useI18n();
   const [preciousMetalOpen, setPreciousMetalOpen] = useState(false);
   const [preciousSellOpen, setPreciousSellOpen] = useState(false);
   const [fundOpen, setFundOpen] = useState(false);
@@ -430,34 +779,42 @@ function AssetSection({
   const [realEstateSellError, setRealEstateSellError] = useState("");
   const [sellingPreciousId, setSellingPreciousId] = useState("");
   const [sellPreciousPieces, setSellPreciousPieces] = useState("");
-  const [sellPreciousPricePerPiece, setSellPreciousPricePerPiece] = useState("");
+  const [sellPreciousPricePerPiece, setSellPreciousPricePerPiece] =
+    useState("");
   const [sellingFundId, setSellingFundId] = useState("");
   const [sellFundShares, setSellFundShares] = useState("");
   const [sellFundPricePerShare, setSellFundPricePerShare] = useState("");
   const [sellingRealEstateId, setSellingRealEstateId] = useState("");
   const [sellRealEstatePrice, setSellRealEstatePrice] = useState("");
   const sellPreciousValue = useMemo(
-    () => parseNumericValue(sellPreciousPieces) * parseNumericValue(sellPreciousPricePerPiece),
-    [sellPreciousPieces, sellPreciousPricePerPiece]
+    () =>
+      parseNumericValue(sellPreciousPieces) *
+      parseNumericValue(sellPreciousPricePerPiece),
+    [sellPreciousPieces, sellPreciousPricePerPiece],
   );
   const sellFundValue = useMemo(
-    () => parseNumericValue(sellFundShares) * parseNumericValue(sellFundPricePerShare),
-    [sellFundShares, sellFundPricePerShare]
+    () =>
+      parseNumericValue(sellFundShares) *
+      parseNumericValue(sellFundPricePerShare),
+    [sellFundShares, sellFundPricePerShare],
   );
   const selectedRealEstateForSale = useMemo(
-    () => realEstateAssets.find((entry) => entry.id === sellingRealEstateId) ?? null,
-    [realEstateAssets, sellingRealEstateId]
+    () =>
+      realEstateAssets.find((entry) => entry.id === sellingRealEstateId) ??
+      null,
+    [realEstateAssets, sellingRealEstateId],
   );
   const selectedRealEstateLiability = useMemo(() => {
     if (!selectedRealEstateForSale) return 0;
     return Math.max(
-      parseNumericValue(selectedRealEstateForSale.cost) - parseNumericValue(selectedRealEstateForSale.downPayment),
-      0
+      parseNumericValue(selectedRealEstateForSale.cost) -
+        parseNumericValue(selectedRealEstateForSale.downPayment),
+      0,
     );
   }, [selectedRealEstateForSale]);
   const sellRealEstateCredit = useMemo(
     () => parseNumericValue(sellRealEstatePrice) - selectedRealEstateLiability,
-    [sellRealEstatePrice, selectedRealEstateLiability]
+    [sellRealEstatePrice, selectedRealEstateLiability],
   );
   const [preciousDraft, setPreciousDraft] = useState<PreciousMetalEntry>({
     id: "",
@@ -483,14 +840,23 @@ function AssetSection({
     cost: "",
     cashFlow: "",
   });
-  const preciousPurchaseAmount = useMemo(() => parseNumericValue(preciousDraft.value), [preciousDraft.value]);
-  const fundPurchaseAmount = useMemo(() => parseNumericValue(fundDraft.value), [fundDraft.value]);
+  const preciousPurchaseAmount = useMemo(
+    () => parseNumericValue(preciousDraft.value),
+    [preciousDraft.value],
+  );
+  const fundPurchaseAmount = useMemo(
+    () => parseNumericValue(fundDraft.value),
+    [fundDraft.value],
+  );
   const realEstatePurchaseAmount = useMemo(
     () => parseNumericValue(realEstateDraft.downPayment),
-    [realEstateDraft.downPayment]
+    [realEstateDraft.downPayment],
   );
 
-  const updatePreciousDraft = (field: keyof PreciousMetalEntry, value: string) => {
+  const updatePreciousDraft = (
+    field: keyof PreciousMetalEntry,
+    value: string,
+  ) => {
     setPreciousDraft((current) => {
       const next = { ...current, [field]: value } as PreciousMetalEntry;
       const pieces = parseNumericValue(next.pieces);
@@ -498,11 +864,13 @@ function AssetSection({
       const itemValue = parseNumericValue(next.value);
 
       if (field === "pieces" || field === "pricePerPiece") {
-        next.value = pieces > 0 && pricePerPiece > 0 ? String(pieces * pricePerPiece) : "";
+        next.value =
+          pieces > 0 && pricePerPiece > 0 ? String(pieces * pricePerPiece) : "";
       }
 
       if (field === "value") {
-        next.pricePerPiece = pieces > 0 && value !== "" ? String(itemValue / pieces) : "";
+        next.pricePerPiece =
+          pieces > 0 && value !== "" ? String(itemValue / pieces) : "";
       }
 
       return next;
@@ -515,12 +883,17 @@ function AssetSection({
 
     const purchaseAmount = parseNumericValue(preciousDraft.value);
     if (purchaseAmount <= 0) {
-      setPreciousBuyError("Enter a valid value.");
+      setPreciousBuyError(t("Enter a valid value."));
       return;
     }
 
-    if (!onAssetPurchase(purchaseAmount, `Buy precious metal: ${trimmedName}`)) {
-      setPreciousBuyError("Not enough balance.");
+    if (
+      !onAssetPurchase(
+        purchaseAmount,
+        `${t("Buy precious metal: ")}${trimmedName}`,
+      )
+    ) {
+      setPreciousBuyError(t("Not enough balance."));
       return;
     }
 
@@ -532,7 +905,13 @@ function AssetSection({
         name: trimmedName,
       },
     ]);
-    setPreciousDraft({ id: "", name: "", pieces: "", pricePerPiece: "", value: "" });
+    setPreciousDraft({
+      id: "",
+      name: "",
+      pieces: "",
+      pricePerPiece: "",
+      value: "",
+    });
     setPreciousBuyError("");
     setPreciousMetalOpen(false);
   };
@@ -546,9 +925,11 @@ function AssetSection({
   };
 
   const confirmSellPreciousMetal = () => {
-    const selected = preciousMetals.find((entry) => entry.id === sellingPreciousId);
+    const selected = preciousMetals.find(
+      (entry) => entry.id === sellingPreciousId,
+    );
     if (!selected) {
-      setPreciousSellError("Selected entry is no longer available.");
+      setPreciousSellError(t("Selected entry is no longer available."));
       return;
     }
 
@@ -557,17 +938,17 @@ function AssetSection({
     const currentPieces = parseNumericValue(selected.pieces);
 
     if (piecesToSell <= 0) {
-      setPreciousSellError("Enter a valid number of pieces.");
+      setPreciousSellError(t("Enter a valid number of pieces."));
       return;
     }
 
     if (sellPricePerPiece <= 0) {
-      setPreciousSellError("Enter a valid price per piece.");
+      setPreciousSellError(t("Enter a valid price per piece."));
       return;
     }
 
     if (piecesToSell > currentPieces) {
-      setPreciousSellError("Cannot sell more pieces than you own.");
+      setPreciousSellError(t("Cannot sell more pieces than you own."));
       return;
     }
 
@@ -590,10 +971,13 @@ function AssetSection({
             value: String(remainingPieces * carryingPricePerPiece),
           };
         })
-        .filter((entry): entry is PreciousMetalEntry => entry !== null)
+        .filter((entry): entry is PreciousMetalEntry => entry !== null),
     );
 
-    onAssetSale(saleAmount, `Sell precious metal: ${selected.name || "Unnamed"}`);
+    onAssetSale(
+      saleAmount,
+      `${t("Sell precious metal: ")}${selected.name || t("Unnamed")}`,
+    );
     setSellingPreciousId("");
     setSellPreciousPieces("");
     setSellPreciousPricePerPiece("");
@@ -608,7 +992,8 @@ function AssetSection({
       const costPerShare = parseNumericValue(next.costPerShare);
 
       if (field === "shares" || field === "costPerShare") {
-        next.value = shares > 0 && costPerShare > 0 ? String(shares * costPerShare) : "";
+        next.value =
+          shares > 0 && costPerShare > 0 ? String(shares * costPerShare) : "";
       }
 
       return next;
@@ -621,17 +1006,25 @@ function AssetSection({
 
     const purchaseAmount = parseNumericValue(fundDraft.value);
     if (purchaseAmount <= 0) {
-      setFundBuyError("Enter a valid value.");
+      setFundBuyError(t("Enter a valid value."));
       return;
     }
 
-    if (!onAssetPurchase(purchaseAmount, `Buy shares/funds/CDs: ${trimmedName}`)) {
-      setFundBuyError("Not enough balance.");
+    if (
+      !onAssetPurchase(
+        purchaseAmount,
+        `${t("Buy shares/funds/CDs: ")}${trimmedName}`,
+      )
+    ) {
+      setFundBuyError(t("Not enough balance."));
       return;
     }
 
     setFunds((current) => {
-      const existing = current.find((entry) => entry.name.trim().toLowerCase() === trimmedName.toLowerCase());
+      const existing = current.find(
+        (entry) =>
+          entry.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+      );
       if (!existing) {
         return [
           ...current,
@@ -645,7 +1038,8 @@ function AssetSection({
       }
 
       const existingShares = parseNumericValue(existing.shares);
-      const existingCost = parseNumericValue(existing.costPerShare) * existingShares;
+      const existingCost =
+        parseNumericValue(existing.costPerShare) * existingShares;
       const nextShares = parseNumericValue(fundDraft.shares);
       const nextCost = parseNumericValue(fundDraft.costPerShare) * nextShares;
       const totalShares = existingShares + nextShares;
@@ -660,33 +1054,52 @@ function AssetSection({
               shares: String(totalShares),
               costPerShare: String(mixedCost),
               value: String(totalShares * mixedCost),
-              cashFlow: String(parseNumericValue(entry.cashFlow) + parseNumericValue(fundDraft.cashFlow)),
+              cashFlow: String(
+                parseNumericValue(entry.cashFlow) +
+                  parseNumericValue(fundDraft.cashFlow),
+              ),
             }
-          : entry
+          : entry,
       );
     });
 
     setFundIncomeEntries((current) => {
       const trimmedAmount = fundDraft.cashFlow.trim();
       const currentAmount = parseNumericValue(trimmedAmount);
-      const existing = current.find((entry) => entry.name.trim().toLowerCase() === trimmedName.toLowerCase());
+      const existing = current.find(
+        (entry) =>
+          entry.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+      );
 
       if (!trimmedAmount || currentAmount <= 0) {
         return current;
       }
 
       if (!existing) {
-        return [...current, { id: createEntryId(), name: trimmedName, amount: trimmedAmount }];
+        return [
+          ...current,
+          { id: createEntryId(), name: trimmedName, amount: trimmedAmount },
+        ];
       }
 
       return current.map((entry) =>
         entry.id === existing.id
-          ? { ...entry, amount: String(parseNumericValue(entry.amount) + currentAmount) }
-          : entry
+          ? {
+              ...entry,
+              amount: String(parseNumericValue(entry.amount) + currentAmount),
+            }
+          : entry,
       );
     });
 
-    setFundDraft({ id: "", name: "", shares: "", costPerShare: "", value: "", cashFlow: "" });
+    setFundDraft({
+      id: "",
+      name: "",
+      shares: "",
+      costPerShare: "",
+      value: "",
+      cashFlow: "",
+    });
     setFundBuyError("");
     setFundOpen(false);
   };
@@ -702,7 +1115,7 @@ function AssetSection({
   const confirmSellFundEntry = () => {
     const selected = funds.find((entry) => entry.id === sellingFundId);
     if (!selected) {
-      setFundSellError("Selected entry is no longer available.");
+      setFundSellError(t("Selected entry is no longer available."));
       return;
     }
 
@@ -711,17 +1124,17 @@ function AssetSection({
     const currentShares = parseNumericValue(selected.shares);
 
     if (sharesToSell <= 0) {
-      setFundSellError("Enter a valid number of shares.");
+      setFundSellError(t("Enter a valid number of shares."));
       return;
     }
 
     if (sellPricePerShare <= 0) {
-      setFundSellError("Enter a valid price per share.");
+      setFundSellError(t("Enter a valid price per share."));
       return;
     }
 
     if (sharesToSell > currentShares) {
-      setFundSellError("Cannot sell more shares than you own.");
+      setFundSellError(t("Cannot sell more shares than you own."));
       return;
     }
 
@@ -737,7 +1150,10 @@ function AssetSection({
 
           const carryingCostPerShare = parseNumericValue(entry.costPerShare);
           const currentCashFlow = parseNumericValue(entry.cashFlow);
-          const nextCashFlow = currentShares > 0 ? (currentCashFlow * remainingShares) / currentShares : 0;
+          const nextCashFlow =
+            currentShares > 0
+              ? (currentCashFlow * remainingShares) / currentShares
+              : 0;
 
           return {
             ...entry,
@@ -746,30 +1162,38 @@ function AssetSection({
             cashFlow: String(nextCashFlow),
           };
         })
-        .filter((entry): entry is FundEntry => entry !== null)
+        .filter((entry): entry is FundEntry => entry !== null),
     );
 
     if (trimmedName) {
       if (remainingShares <= 0) {
         setFundIncomeEntries((current) =>
-          current.filter((entry) => entry.name.trim().toLowerCase() !== trimmedName.toLowerCase())
+          current.filter(
+            (entry) =>
+              entry.name.trim().toLowerCase() !== trimmedName.toLowerCase(),
+          ),
         );
       } else {
-        const updatedCashFlow = currentShares > 0
-          ? (parseNumericValue(selected.cashFlow) * remainingShares) / currentShares
-          : 0;
+        const updatedCashFlow =
+          currentShares > 0
+            ? (parseNumericValue(selected.cashFlow) * remainingShares) /
+              currentShares
+            : 0;
 
         setFundIncomeEntries((current) =>
           current.map((entry) =>
             entry.name.trim().toLowerCase() === trimmedName.toLowerCase()
               ? { ...entry, amount: String(updatedCashFlow) }
-              : entry
-          )
+              : entry,
+          ),
         );
       }
     }
 
-    onAssetSale(saleAmount, `Sell shares/funds/CDs: ${selected.name || "Unnamed"}`);
+    onAssetSale(
+      saleAmount,
+      `${t("Sell shares/funds/CDs: ")}${selected.name || t("Unnamed")}`,
+    );
     setSellingFundId("");
     setSellFundShares("");
     setSellFundPricePerShare("");
@@ -777,7 +1201,10 @@ function AssetSection({
     setFundSellOpen(false);
   };
 
-  const updateRealEstateDraft = (field: keyof RealEstateAssetEntry, value: string) => {
+  const updateRealEstateDraft = (
+    field: keyof RealEstateAssetEntry,
+    value: string,
+  ) => {
     setRealEstateDraft((current) => ({ ...current, [field]: value }));
   };
 
@@ -787,12 +1214,17 @@ function AssetSection({
     const trimmedName = realEstateDraft.name.trim();
     const purchaseAmount = parseNumericValue(realEstateDraft.downPayment);
     if (purchaseAmount <= 0) {
-      setRealEstateBuyError("Enter a valid down payment.");
+      setRealEstateBuyError(t("Enter a valid down payment."));
       return;
     }
 
-    if (!onAssetPurchase(purchaseAmount, `Buy real estate/business: ${trimmedName}`)) {
-      setRealEstateBuyError("Not enough balance.");
+    if (
+      !onAssetPurchase(
+        purchaseAmount,
+        `${t("Buy real estate/business: ")}${trimmedName}`,
+      )
+    ) {
+      setRealEstateBuyError(t("Not enough balance."));
       return;
     }
 
@@ -807,33 +1239,60 @@ function AssetSection({
 
     if (realEstateDraft.cashFlow.trim()) {
       setRealEstateIncomeEntries((current) => {
-        const existing = current.find((entry) => entry.name.trim().toLowerCase() === trimmedName.toLowerCase());
+        const existing = current.find(
+          (entry) =>
+            entry.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+        );
         if (!existing) {
-          return [...current, { id: createEntryId(), name: trimmedName, amount: realEstateDraft.cashFlow }];
+          return [
+            ...current,
+            {
+              id: createEntryId(),
+              name: trimmedName,
+              amount: realEstateDraft.cashFlow,
+            },
+          ];
         }
 
         return current.map((entry) =>
           entry.id === existing.id
-            ? { ...entry, amount: String(parseNumericValue(entry.amount) + parseNumericValue(realEstateDraft.cashFlow)) }
-            : entry
+            ? {
+                ...entry,
+                amount: String(
+                  parseNumericValue(entry.amount) +
+                    parseNumericValue(realEstateDraft.cashFlow),
+                ),
+              }
+            : entry,
         );
       });
     }
 
-    setRealEstateDraft({ id: "", name: "", downPayment: "", cost: "", cashFlow: "" });
+    setRealEstateDraft({
+      id: "",
+      name: "",
+      downPayment: "",
+      cost: "",
+      cashFlow: "",
+    });
     setRealEstateBuyError("");
     setRealEstateOpen(false);
   };
 
   const removeRealEstateAsset = (id: string) => {
     const selected = realEstateAssets.find((entry) => entry.id === id);
-    setRealEstateAssets((current) => current.filter((entry) => entry.id !== id));
+    setRealEstateAssets((current) =>
+      current.filter((entry) => entry.id !== id),
+    );
 
     if (selected) {
       const trimmedName = selected.name.trim();
       if (trimmedName) {
         setRealEstateIncomeEntries((current) =>
-          current.filter((entry) => entry.name.trim().toLowerCase() !== trimmedName.toLowerCase())
+          current.filter(
+            (entry) =>
+              entry.name.trim().toLowerCase() !== trimmedName.toLowerCase(),
+          ),
         );
       }
     }
@@ -848,25 +1307,30 @@ function AssetSection({
 
   const confirmSellRealEstateAsset = () => {
     if (!selectedRealEstateForSale) {
-      setRealEstateSellError("Selected entry is no longer available.");
+      setRealEstateSellError(t("Selected entry is no longer available."));
       return;
     }
 
     const sellPrice = parseNumericValue(sellRealEstatePrice);
     if (sellPrice <= 0) {
-      setRealEstateSellError("Enter a valid sell price.");
+      setRealEstateSellError(t("Enter a valid sell price."));
       return;
     }
 
     const creditAmount = sellPrice - selectedRealEstateLiability;
     if (creditAmount < 0) {
-      setRealEstateSellError("Sell price must be at least the liability amount.");
+      setRealEstateSellError(
+        t("Sell price must be at least the liability amount."),
+      );
       return;
     }
 
     removeRealEstateAsset(selectedRealEstateForSale.id);
     if (creditAmount > 0) {
-      onAssetSale(creditAmount, `Sell real estate/business: ${selectedRealEstateForSale.name || "Unnamed"}`);
+      onAssetSale(
+        creditAmount,
+        `${t("Sell real estate/business: ")}${selectedRealEstateForSale.name || t("Unnamed")}`,
+      );
     }
 
     setSellingRealEstateId("");
@@ -879,11 +1343,14 @@ function AssetSection({
     <div className="space-y-4">
       <Card className="rounded-[1.5rem]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Savings</CardTitle>
+          <CardTitle className="text-base">{t("Savings")}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-3 pt-0">
-          <Label htmlFor="savings" className="text-sm font-medium text-foreground">
-            Savings
+          <Label
+            htmlFor="savings"
+            className="text-sm font-medium text-foreground"
+          >
+            {t("Savings")}
           </Label>
           <Input
             id="savings"
@@ -892,8 +1359,8 @@ function AssetSection({
             min="0"
             step="100"
             value={savings}
-            onChange={(event) => setSavings(event.target.value)}
             placeholder="0"
+            readOnly
             className="h-9 w-[160px] text-right"
           />
         </CardContent>
@@ -901,7 +1368,9 @@ function AssetSection({
 
       <Card className="rounded-[1.5rem]">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Precious Metals etc.</CardTitle>
+          <CardTitle className="text-base">
+            {t("Precious Metals etc.")}
+          </CardTitle>
           <Dialog
             open={preciousMetalOpen}
             onOpenChange={(open) => {
@@ -912,29 +1381,33 @@ function AssetSection({
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm">
                 <Plus className="mr-1 h-4 w-4" />
-                Buy
+                {t("Buy")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add precious metal</DialogTitle>
-                <DialogDescription>Record a purchase and calculate the total value.</DialogDescription>
+                <DialogTitle>{t("Add precious metal")}</DialogTitle>
+                <DialogDescription>
+                  {t("Record a purchase and calculate the total value.")}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="precious-name">Name</Label>
+                  <Label htmlFor="precious-name">{t("Name")}</Label>
                   <Input
                     id="precious-name"
                     value={preciousDraft.name}
-                    onChange={(event) => updatePreciousDraft("name", event.target.value)}
-                    placeholder="Gold"
+                    onChange={(event) =>
+                      updatePreciousDraft("name", event.target.value)
+                    }
+                    placeholder={t("Gold")}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="precious-pieces">Pieces</Label>
+                    <Label htmlFor="precious-pieces">{t("Pieces")}</Label>
                     <Input
                       id="precious-pieces"
                       type="number"
@@ -942,13 +1415,15 @@ function AssetSection({
                       min="0"
                       step="1"
                       value={preciousDraft.pieces}
-                      onChange={(event) => updatePreciousDraft("pieces", event.target.value)}
+                      onChange={(event) =>
+                        updatePreciousDraft("pieces", event.target.value)
+                      }
                       placeholder="0"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="precious-price">Price / piece</Label>
+                    <Label htmlFor="precious-price">{t("Price / piece")}</Label>
                     <Input
                       id="precious-price"
                       type="number"
@@ -956,14 +1431,16 @@ function AssetSection({
                       min="0"
                       step="0.01"
                       value={preciousDraft.pricePerPiece}
-                      onChange={(event) => updatePreciousDraft("pricePerPiece", event.target.value)}
+                      onChange={(event) =>
+                        updatePreciousDraft("pricePerPiece", event.target.value)
+                      }
                       placeholder="0"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="precious-value">Value</Label>
+                  <Label htmlFor="precious-value">{t("Value")}</Label>
                   <Input
                     id="precious-value"
                     type="number"
@@ -971,13 +1448,20 @@ function AssetSection({
                     min="0"
                     step="0.01"
                     value={preciousDraft.value}
-                    onChange={(event) => updatePreciousDraft("value", event.target.value)}
+                    onChange={(event) =>
+                      updatePreciousDraft("value", event.target.value)
+                    }
                     placeholder="0"
                   />
                 </div>
-                {preciousBuyError ? <p className="text-sm text-destructive">{preciousBuyError}</p> : null}
-                {!preciousBuyError && preciousPurchaseAmount > accountBalance ? (
-                  <p className="text-sm text-destructive">Not enough balance.</p>
+                {preciousBuyError ? (
+                  <p className="text-sm text-destructive">{preciousBuyError}</p>
+                ) : null}
+                {!preciousBuyError &&
+                preciousPurchaseAmount > accountBalance ? (
+                  <p className="text-sm text-destructive">
+                    {t("Not enough balance.")}
+                  </p>
                 ) : null}
               </div>
 
@@ -990,14 +1474,18 @@ function AssetSection({
                     setPreciousBuyError("");
                   }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button
                   type="button"
                   onClick={savePreciousMetal}
-                  disabled={!preciousDraft.name.trim() || preciousPurchaseAmount <= 0 || preciousPurchaseAmount > accountBalance}
+                  disabled={
+                    !preciousDraft.name.trim() ||
+                    preciousPurchaseAmount <= 0 ||
+                    preciousPurchaseAmount > accountBalance
+                  }
                 >
-                  Save
+                  {t("Save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1006,23 +1494,39 @@ function AssetSection({
         <CardContent className="space-y-3 pt-0">
           {preciousMetals.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-              No entries yet.
+              {t("No entries yet.")}
             </div>
           ) : (
             preciousMetals.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5">
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
+              >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">{entry.name || "Unnamed"}</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {entry.name || t("Unnamed")}
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    {entry.pieces || "0"} pcs · {currencyFormatter.format(parseNumericValue(entry.pricePerPiece || "0"))} / piece
+                    {entry.pieces || "0"} {t("pcs")} ·{" "}
+                    {currencyFormatter.format(
+                      parseNumericValue(entry.pricePerPiece || "0"),
+                    )}{" "}
+                    {t("/ piece")}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-medium text-foreground">
-                    {currencyFormatter.format(parseNumericValue(entry.value || "0"))}
+                    {currencyFormatter.format(
+                      parseNumericValue(entry.value || "0"),
+                    )}
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => openSellPreciousMetal(entry)}>
-                    Sell
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openSellPreciousMetal(entry)}
+                  >
+                    {t("Sell")}
                   </Button>
                 </div>
               </div>
@@ -1043,13 +1547,15 @@ function AssetSection({
           >
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Sell precious metal</DialogTitle>
-                <DialogDescription>Enter number of pieces and price per piece.</DialogDescription>
+                <DialogTitle>{t("Sell precious metal")}</DialogTitle>
+                <DialogDescription>
+                  {t("Enter number of pieces and price per piece.")}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-precious-pieces">Pieces</Label>
+                  <Label htmlFor="sell-precious-pieces">{t("Pieces")}</Label>
                   <Input
                     id="sell-precious-pieces"
                     type="number"
@@ -1066,7 +1572,9 @@ function AssetSection({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-precious-price">Price / piece</Label>
+                  <Label htmlFor="sell-precious-price">
+                    {t("Price / piece")}
+                  </Label>
                   <Input
                     id="sell-precious-price"
                     type="number"
@@ -1083,11 +1591,19 @@ function AssetSection({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-precious-value">Sell value</Label>
-                  <Input id="sell-precious-value" value={currencyFormatter.format(sellPreciousValue)} readOnly />
+                  <Label htmlFor="sell-precious-value">{t("Sell value")}</Label>
+                  <Input
+                    id="sell-precious-value"
+                    value={currencyFormatter.format(sellPreciousValue)}
+                    readOnly
+                  />
                 </div>
 
-                {preciousSellError ? <p className="text-sm text-destructive">{preciousSellError}</p> : null}
+                {preciousSellError ? (
+                  <p className="text-sm text-destructive">
+                    {preciousSellError}
+                  </p>
+                ) : null}
               </div>
 
               <DialogFooter className="pt-2">
@@ -1102,10 +1618,10 @@ function AssetSection({
                     setSellPreciousPricePerPiece("");
                   }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button type="button" onClick={confirmSellPreciousMetal}>
-                  Confirm
+                  {t("Confirm")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1115,7 +1631,9 @@ function AssetSection({
 
       <Card className="rounded-[1.5rem]">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Shares / Funds / CDs</CardTitle>
+          <CardTitle className="text-base">
+            {t("Shares / Funds / CDs")}
+          </CardTitle>
           <Dialog
             open={fundOpen}
             onOpenChange={(open) => {
@@ -1126,29 +1644,35 @@ function AssetSection({
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm">
                 <Plus className="mr-1 h-4 w-4" />
-                Buy
+                {t("Buy")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add fund</DialogTitle>
-                <DialogDescription>Add a new fund or merge it into an existing one with the same name.</DialogDescription>
+                <DialogTitle>{t("Add fund")}</DialogTitle>
+                <DialogDescription>
+                  {t(
+                    "Add a new fund or merge it into an existing one with the same name.",
+                  )}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="fund-name">Name</Label>
+                  <Label htmlFor="fund-name">{t("Name")}</Label>
                   <Input
                     id="fund-name"
                     value={fundDraft.name}
-                    onChange={(event) => updateFundDraft("name", event.target.value)}
-                    placeholder="Index Fund"
+                    onChange={(event) =>
+                      updateFundDraft("name", event.target.value)
+                    }
+                    placeholder={t("Index Fund")}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="fund-shares">Shares</Label>
+                    <Label htmlFor="fund-shares">{t("Shares")}</Label>
                     <Input
                       id="fund-shares"
                       type="number"
@@ -1156,13 +1680,15 @@ function AssetSection({
                       min="0"
                       step="1"
                       value={fundDraft.shares}
-                      onChange={(event) => updateFundDraft("shares", event.target.value)}
+                      onChange={(event) =>
+                        updateFundDraft("shares", event.target.value)
+                      }
                       placeholder="0"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="fund-cost">Cost / share</Label>
+                    <Label htmlFor="fund-cost">{t("Cost / share")}</Label>
                     <Input
                       id="fund-cost"
                       type="number"
@@ -1170,14 +1696,16 @@ function AssetSection({
                       min="0"
                       step="0.01"
                       value={fundDraft.costPerShare}
-                      onChange={(event) => updateFundDraft("costPerShare", event.target.value)}
+                      onChange={(event) =>
+                        updateFundDraft("costPerShare", event.target.value)
+                      }
                       placeholder="0"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="fund-cashflow">Cashflow amount</Label>
+                  <Label htmlFor="fund-cashflow">{t("Cashflow amount")}</Label>
                   <Input
                     id="fund-cashflow"
                     type="number"
@@ -1185,13 +1713,15 @@ function AssetSection({
                     min="0"
                     step="1"
                     value={fundDraft.cashFlow}
-                    onChange={(event) => updateFundDraft("cashFlow", event.target.value)}
+                    onChange={(event) =>
+                      updateFundDraft("cashFlow", event.target.value)
+                    }
                     placeholder="0"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="fund-value">Value</Label>
+                  <Label htmlFor="fund-value">{t("Value")}</Label>
                   <Input
                     id="fund-value"
                     type="number"
@@ -1202,9 +1732,13 @@ function AssetSection({
                     readOnly
                   />
                 </div>
-                {fundBuyError ? <p className="text-sm text-destructive">{fundBuyError}</p> : null}
+                {fundBuyError ? (
+                  <p className="text-sm text-destructive">{fundBuyError}</p>
+                ) : null}
                 {!fundBuyError && fundPurchaseAmount > accountBalance ? (
-                  <p className="text-sm text-destructive">Not enough balance.</p>
+                  <p className="text-sm text-destructive">
+                    {t("Not enough balance.")}
+                  </p>
                 ) : null}
               </div>
 
@@ -1217,14 +1751,18 @@ function AssetSection({
                     setFundBuyError("");
                   }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button
                   type="button"
                   onClick={saveFundEntry}
-                  disabled={!fundDraft.name.trim() || fundPurchaseAmount <= 0 || fundPurchaseAmount > accountBalance}
+                  disabled={
+                    !fundDraft.name.trim() ||
+                    fundPurchaseAmount <= 0 ||
+                    fundPurchaseAmount > accountBalance
+                  }
                 >
-                  Save
+                  {t("Save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1233,23 +1771,39 @@ function AssetSection({
         <CardContent className="space-y-3 pt-0">
           {funds.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-              No entries yet.
+              {t("No entries yet.")}
             </div>
           ) : (
             funds.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5">
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
+              >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">{entry.name || "Unnamed"}</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {entry.name || t("Unnamed")}
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    {entry.shares || "0"} shares · {currencyFormatter.format(parseNumericValue(entry.costPerShare || "0"))} / share
+                    {entry.shares || "0"} {t("shares")} ·{" "}
+                    {currencyFormatter.format(
+                      parseNumericValue(entry.costPerShare || "0"),
+                    )}{" "}
+                    {t("/ share")}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-medium text-foreground">
-                    {currencyFormatter.format(parseNumericValue(entry.value || "0"))}
+                    {currencyFormatter.format(
+                      parseNumericValue(entry.value || "0"),
+                    )}
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => openSellFundEntry(entry)}>
-                    Sell
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openSellFundEntry(entry)}
+                  >
+                    {t("Sell")}
                   </Button>
                 </div>
               </div>
@@ -1270,13 +1824,15 @@ function AssetSection({
           >
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Sell shares/funds/CDs</DialogTitle>
-                <DialogDescription>Enter number of shares and price per share.</DialogDescription>
+                <DialogTitle>{t("Sell shares/funds/CDs")}</DialogTitle>
+                <DialogDescription>
+                  {t("Enter number of shares and price per share.")}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-fund-shares">Shares</Label>
+                  <Label htmlFor="sell-fund-shares">{t("Shares")}</Label>
                   <Input
                     id="sell-fund-shares"
                     type="number"
@@ -1293,7 +1849,7 @@ function AssetSection({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-fund-price">Price / share</Label>
+                  <Label htmlFor="sell-fund-price">{t("Price / share")}</Label>
                   <Input
                     id="sell-fund-price"
                     type="number"
@@ -1310,11 +1866,17 @@ function AssetSection({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-fund-value">Sell value</Label>
-                  <Input id="sell-fund-value" value={currencyFormatter.format(sellFundValue)} readOnly />
+                  <Label htmlFor="sell-fund-value">{t("Sell value")}</Label>
+                  <Input
+                    id="sell-fund-value"
+                    value={currencyFormatter.format(sellFundValue)}
+                    readOnly
+                  />
                 </div>
 
-                {fundSellError ? <p className="text-sm text-destructive">{fundSellError}</p> : null}
+                {fundSellError ? (
+                  <p className="text-sm text-destructive">{fundSellError}</p>
+                ) : null}
               </div>
 
               <DialogFooter className="pt-2">
@@ -1329,10 +1891,10 @@ function AssetSection({
                     setSellFundPricePerShare("");
                   }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button type="button" onClick={confirmSellFundEntry}>
-                  Confirm
+                  {t("Confirm")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1342,7 +1904,9 @@ function AssetSection({
 
       <Card className="rounded-[1.5rem]">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Real Estate / Business</CardTitle>
+          <CardTitle className="text-base">
+            {t("Real Estate / Business")}
+          </CardTitle>
           <Dialog
             open={realEstateOpen}
             onOpenChange={(open) => {
@@ -1353,29 +1917,37 @@ function AssetSection({
             <DialogTrigger asChild>
               <Button type="button" variant="outline" size="sm">
                 <Plus className="mr-1 h-4 w-4" />
-                Buy
+                {t("Buy")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add real estate or business asset</DialogTitle>
-                <DialogDescription>Record the property name, down payment, and total costs.</DialogDescription>
+                <DialogTitle>
+                  {t("Add real estate or business asset")}
+                </DialogTitle>
+                <DialogDescription>
+                  {t("Record the asset name, down payment, and total costs.")}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="real-estate-name">Name</Label>
+                  <Label htmlFor="real-estate-name">{t("Name")}</Label>
                   <Input
                     id="real-estate-name"
                     value={realEstateDraft.name}
-                    onChange={(event) => updateRealEstateDraft("name", event.target.value)}
-                    placeholder="Asset name"
+                    onChange={(event) =>
+                      updateRealEstateDraft("name", event.target.value)
+                    }
+                    placeholder={t("Asset name")}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="real-estate-down">Down payment</Label>
+                    <Label htmlFor="real-estate-down">
+                      {t("Down payment")}
+                    </Label>
                     <Input
                       id="real-estate-down"
                       type="number"
@@ -1383,13 +1955,15 @@ function AssetSection({
                       min="0"
                       step="100"
                       value={realEstateDraft.downPayment}
-                      onChange={(event) => updateRealEstateDraft("downPayment", event.target.value)}
+                      onChange={(event) =>
+                        updateRealEstateDraft("downPayment", event.target.value)
+                      }
                       placeholder="0"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="real-estate-cost">Costs</Label>
+                    <Label htmlFor="real-estate-cost">{t("Costs")}</Label>
                     <Input
                       id="real-estate-cost"
                       type="number"
@@ -1397,14 +1971,18 @@ function AssetSection({
                       min="0"
                       step="100"
                       value={realEstateDraft.cost}
-                      onChange={(event) => updateRealEstateDraft("cost", event.target.value)}
+                      onChange={(event) =>
+                        updateRealEstateDraft("cost", event.target.value)
+                      }
                       placeholder="0"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="real-estate-cashflow">Cashflow amount</Label>
+                  <Label htmlFor="real-estate-cashflow">
+                    {t("Cashflow amount")}
+                  </Label>
                   <Input
                     id="real-estate-cashflow"
                     type="number"
@@ -1412,13 +1990,22 @@ function AssetSection({
                     min="0"
                     step="1"
                     value={realEstateDraft.cashFlow}
-                    onChange={(event) => updateRealEstateDraft("cashFlow", event.target.value)}
+                    onChange={(event) =>
+                      updateRealEstateDraft("cashFlow", event.target.value)
+                    }
                     placeholder="0"
                   />
                 </div>
-                {realEstateBuyError ? <p className="text-sm text-destructive">{realEstateBuyError}</p> : null}
-                {!realEstateBuyError && realEstatePurchaseAmount > accountBalance ? (
-                  <p className="text-sm text-destructive">Not enough balance.</p>
+                {realEstateBuyError ? (
+                  <p className="text-sm text-destructive">
+                    {realEstateBuyError}
+                  </p>
+                ) : null}
+                {!realEstateBuyError &&
+                realEstatePurchaseAmount > accountBalance ? (
+                  <p className="text-sm text-destructive">
+                    {t("Not enough balance.")}
+                  </p>
                 ) : null}
               </div>
 
@@ -1431,18 +2018,18 @@ function AssetSection({
                     setRealEstateBuyError("");
                   }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button
                   type="button"
                   onClick={saveRealEstateAsset}
                   disabled={
-                    !realEstateDraft.name.trim()
-                    || realEstatePurchaseAmount <= 0
-                    || realEstatePurchaseAmount > accountBalance
+                    !realEstateDraft.name.trim() ||
+                    realEstatePurchaseAmount <= 0 ||
+                    realEstatePurchaseAmount > accountBalance
                   }
                 >
-                  Save
+                  {t("Save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1451,19 +2038,36 @@ function AssetSection({
         <CardContent className="space-y-3 pt-0">
           {realEstateAssets.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-              No entries yet.
+              {t("No entries yet.")}
             </div>
           ) : (
             realEstateAssets.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5">
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
+              >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground">{entry.name || "Unnamed"}</div>
+                  <div className="text-sm font-medium text-foreground">
+                    {entry.name || t("Unnamed")}
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    DP {currencyFormatter.format(parseNumericValue(entry.downPayment || "0"))} · Costs {currencyFormatter.format(parseNumericValue(entry.cost || "0"))}
+                    {t("DP")}{" "}
+                    {currencyFormatter.format(
+                      parseNumericValue(entry.downPayment || "0"),
+                    )}{" "}
+                    · {t("Costs")}{" "}
+                    {currencyFormatter.format(
+                      parseNumericValue(entry.cost || "0"),
+                    )}
                   </div>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => openSellRealEstateAsset(entry)}>
-                  Sell
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openSellRealEstateAsset(entry)}
+                >
+                  {t("Sell")}
                 </Button>
               </div>
             ))
@@ -1482,13 +2086,17 @@ function AssetSection({
           >
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Sell real estate/business</DialogTitle>
-                <DialogDescription>Enter the sell price for this asset.</DialogDescription>
+                <DialogTitle>{t("Sell real estate/business")}</DialogTitle>
+                <DialogDescription>
+                  {t("Enter the sell price for this asset.")}
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-real-estate-price">Sell price</Label>
+                  <Label htmlFor="sell-real-estate-price">
+                    {t("Sell price")}
+                  </Label>
                   <Input
                     id="sell-real-estate-price"
                     type="number"
@@ -1505,16 +2113,34 @@ function AssetSection({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-real-estate-liability">Liability amount</Label>
-                  <Input id="sell-real-estate-liability" value={currencyFormatter.format(selectedRealEstateLiability)} readOnly />
+                  <Label htmlFor="sell-real-estate-liability">
+                    {t("Liability amount")}
+                  </Label>
+                  <Input
+                    id="sell-real-estate-liability"
+                    value={currencyFormatter.format(
+                      selectedRealEstateLiability,
+                    )}
+                    readOnly
+                  />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="sell-real-estate-credit">Credit to balance</Label>
-                  <Input id="sell-real-estate-credit" value={currencyFormatter.format(sellRealEstateCredit)} readOnly />
+                  <Label htmlFor="sell-real-estate-credit">
+                    {t("Credit to balance")}
+                  </Label>
+                  <Input
+                    id="sell-real-estate-credit"
+                    value={currencyFormatter.format(sellRealEstateCredit)}
+                    readOnly
+                  />
                 </div>
 
-                {realEstateSellError ? <p className="text-sm text-destructive">{realEstateSellError}</p> : null}
+                {realEstateSellError ? (
+                  <p className="text-sm text-destructive">
+                    {realEstateSellError}
+                  </p>
+                ) : null}
               </div>
 
               <DialogFooter className="pt-2">
@@ -1528,10 +2154,10 @@ function AssetSection({
                     setSellRealEstatePrice("");
                   }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button type="button" onClick={confirmSellRealEstateAsset}>
-                  Confirm
+                  {t("Confirm")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1544,24 +2170,26 @@ function AssetSection({
 
 function IncomeSection({
   salary,
-  setSalary,
   fundIncomeEntries,
   realEstateIncomeEntries,
 }: {
   salary: string;
-  setSalary: Dispatch<SetStateAction<string>>;
   fundIncomeEntries: IncomeEntry[];
   realEstateIncomeEntries: IncomeEntry[];
 }) {
+  const { t, currencyFormatter } = useI18n();
   return (
     <div className="space-y-4">
       <Card className="rounded-[1.5rem]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Salary</CardTitle>
+          <CardTitle className="text-base">{t("Salary")}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-3 pt-0">
-          <Label htmlFor="salary" className="text-sm font-medium text-foreground">
-            Salary
+          <Label
+            htmlFor="salary"
+            className="text-sm font-medium text-foreground"
+          >
+            {t("Salary")}
           </Label>
           <Input
             id="salary"
@@ -1570,8 +2198,8 @@ function IncomeSection({
             min="0"
             step="100"
             value={salary}
-            onChange={(event) => setSalary(event.target.value)}
             placeholder="0"
+            readOnly
             className="h-9 w-[160px] text-right"
           />
         </CardContent>
@@ -1579,19 +2207,28 @@ function IncomeSection({
 
       <Card className="rounded-[1.5rem]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Interest / Dividends</CardTitle>
+          <CardTitle className="text-base">
+            {t("Interest / Dividends")}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pt-0">
           {fundIncomeEntries.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-              No entries yet.
+              {t("No entries yet.")}
             </div>
           ) : (
             fundIncomeEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5">
-                <div className="min-w-0 flex-1 text-sm font-medium text-foreground">{entry.name || "Unnamed"}</div>
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
+              >
+                <div className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                  {entry.name || t("Unnamed")}
+                </div>
                 <div className="text-sm font-semibold text-foreground">
-                  {currencyFormatter.format(parseNumericValue(entry.amount || "0"))}
+                  {currencyFormatter.format(
+                    parseNumericValue(entry.amount || "0"),
+                  )}
                 </div>
               </div>
             ))
@@ -1601,19 +2238,28 @@ function IncomeSection({
 
       <Card className="rounded-[1.5rem]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Real Estate / Business</CardTitle>
+          <CardTitle className="text-base">
+            {t("Real Estate / Business")}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pt-0">
           {realEstateIncomeEntries.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-              No entries yet.
+              {t("No entries yet.")}
             </div>
           ) : (
             realEstateIncomeEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5">
-                <div className="min-w-0 flex-1 text-sm font-medium text-foreground">{entry.name || "Unnamed"}</div>
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
+              >
+                <div className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                  {entry.name || t("Unnamed")}
+                </div>
                 <div className="text-sm font-semibold text-foreground">
-                  {currencyFormatter.format(parseNumericValue(entry.amount || "0"))}
+                  {currencyFormatter.format(
+                    parseNumericValue(entry.amount || "0"),
+                  )}
                 </div>
               </div>
             ))
@@ -1643,6 +2289,7 @@ function DashboardSection({
   netCashflow: number;
   onLeaveRatRace: () => void;
 }) {
+  const { t, currencyFormatter } = useI18n();
   const netCashflowClassName =
     netCashflow < 0
       ? "text-red-600 dark:text-red-400"
@@ -1653,7 +2300,7 @@ function DashboardSection({
   return (
     <Card className="overflow-hidden rounded-[1.75rem]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Dashboard</CardTitle>
+        <CardTitle className="text-xl">{t("Dashboard")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-3 py-3">
@@ -1662,35 +2309,47 @@ function DashboardSection({
           </div>
           <div>
             <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Selected avatar
+              {t("Selected avatar")}
             </div>
-            <div className="text-base font-semibold text-foreground">{avatarName}</div>
+            <div className="text-base font-semibold text-foreground">
+              {t(avatarName)}
+            </div>
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-muted/50 px-3 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-muted-foreground">Salary</div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {t("Salary")}
+            </div>
             <div className="text-xl font-semibold tracking-tight text-foreground">
               {currencyFormatter.format(salaryTotal)}
             </div>
           </div>
 
           <div className="flex justify-end py-1">
-            <div className="w-fit text-lg font-semibold text-muted-foreground">+</div>
+            <div className="w-fit text-lg font-semibold text-muted-foreground">
+              +
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-muted-foreground">Passive income</div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {t("Passive income")}
+            </div>
             <div className="text-xl font-semibold tracking-tight text-foreground">
               {currencyFormatter.format(passiveIncomeTotal)}
             </div>
           </div>
 
           <div className="mt-2 flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-muted-foreground">Total income</div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {t("Total income")}
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-muted-foreground">=</span>
+              <span className="text-lg font-semibold text-muted-foreground">
+                =
+              </span>
               <span className="text-xl font-semibold tracking-tight text-foreground">
                 {currencyFormatter.format(incomeTotal)}
               </span>
@@ -1698,21 +2357,31 @@ function DashboardSection({
           </div>
 
           <div className="flex justify-end py-1">
-            <div className="w-fit text-lg font-semibold text-muted-foreground">-</div>
+            <div className="w-fit text-lg font-semibold text-muted-foreground">
+              -
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-muted-foreground">Total expenses</div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {t("Total expenses")}
+            </div>
             <div className="text-xl font-semibold tracking-tight text-foreground">
               {currencyFormatter.format(totalExpenses)}
             </div>
           </div>
 
           <div className="mt-2 flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-muted-foreground">Cashflow</div>
+            <div className="text-sm font-medium text-muted-foreground">
+              {t("Cashflow")}
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-muted-foreground">=</span>
-              <span className={`text-xl font-semibold tracking-tight ${netCashflowClassName}`}>
+              <span className="text-lg font-semibold text-muted-foreground">
+                =
+              </span>
+              <span
+                className={`text-xl font-semibold tracking-tight ${netCashflowClassName}`}
+              >
                 {currencyFormatter.format(netCashflow)}
               </span>
             </div>
@@ -1721,11 +2390,11 @@ function DashboardSection({
 
         {passiveIncomeTotal <= totalExpenses ? (
           <div className="rounded-xl border border-border bg-muted/50 px-3 py-3 text-center text-sm font-medium text-foreground">
-            You are in the rat race
+            {t("You are in the rat race")}
           </div>
         ) : (
           <Button type="button" className="w-full" onClick={onLeaveRatRace}>
-            Leave the ratrace
+            {t("Leave the ratrace")}
           </Button>
         )}
       </CardContent>
@@ -1746,6 +2415,7 @@ function RatRaceDashboardSection({
   targetCashflowIncome: number;
   differenceToTarget: number;
 }) {
+  const { t, currencyFormatter } = useI18n();
   const [businessName, setBusinessName] = useState("");
   const [businessCashFlow, setBusinessCashFlow] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -1763,11 +2433,13 @@ function RatRaceDashboardSection({
   return (
     <Card className="overflow-hidden rounded-[1.75rem]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Dashboard</CardTitle>
+        <CardTitle className="text-xl">{t("Dashboard")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         <div className="rounded-xl border border-border bg-muted/50 px-3 py-4">
-          <div className="text-sm font-medium text-muted-foreground">Cashflow income</div>
+          <div className="text-sm font-medium text-muted-foreground">
+            {t("Cashflow income")}
+          </div>
           <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
             {currencyFormatter.format(cashflowIncome)}
           </div>
@@ -1776,17 +2448,25 @@ function RatRaceDashboardSection({
         <div className="rounded-xl border border-border bg-muted/50 px-3 py-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Target cashflow income</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("Target cashflow income")}
+              </span>
               <span className="text-sm font-semibold text-foreground">
                 {currencyFormatter.format(targetCashflowIncome)}
               </span>
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Difference to target</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("Difference to target")}
+              </span>
               <span className="text-sm font-semibold text-foreground">
                 {currencyFormatter.format(Math.abs(differenceToTarget))}
-                {differenceToTarget < 0 ? " above target" : differenceToTarget > 0 ? " remaining" : " reached"}
+                {differenceToTarget < 0
+                  ? t(" above target")
+                  : differenceToTarget > 0
+                    ? t(" remaining")
+                    : t(" reached")}
               </span>
             </div>
           </div>
@@ -1794,32 +2474,36 @@ function RatRaceDashboardSection({
 
         <div className="rounded-xl border border-border bg-muted/50 px-3 py-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="text-sm font-semibold text-foreground">Businesses</div>
+            <div className="text-sm font-semibold text-foreground">
+              {t("Businesses")}
+            </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button type="button" size="sm">
-                  Buy business
+                  {t("Buy business")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Buy business</DialogTitle>
-                  <DialogDescription>Choose a business name and monthly cashflow.</DialogDescription>
+                  <DialogTitle>{t("Buy business")}</DialogTitle>
+                  <DialogDescription>
+                    {t("Choose a business name and monthly cashflow.")}
+                  </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
-                    <Label htmlFor="business-name">Business name</Label>
+                    <Label htmlFor="business-name">{t("Business name")}</Label>
                     <Input
                       id="business-name"
                       value={businessName}
                       onChange={(event) => setBusinessName(event.target.value)}
-                      placeholder="Coffee shop"
+                      placeholder={t("Coffee shop")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="business-cashflow">Cashflow</Label>
+                    <Label htmlFor="business-cashflow">{t("Cashflow")}</Label>
                     <Input
                       id="business-cashflow"
                       type="number"
@@ -1827,18 +2511,30 @@ function RatRaceDashboardSection({
                       min="0"
                       step="100"
                       value={businessCashFlow}
-                      onChange={(event) => setBusinessCashFlow(event.target.value)}
+                      onChange={(event) =>
+                        setBusinessCashFlow(event.target.value)
+                      }
                       placeholder="1500"
                     />
                   </div>
                 </div>
 
                 <DialogFooter className="pt-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Cancel
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    {t("Cancel")}
                   </Button>
-                  <Button type="button" onClick={handleConfirm} disabled={!businessName.trim() || businessCashFlow.trim() === ""}>
-                    Buy
+                  <Button
+                    type="button"
+                    onClick={handleConfirm}
+                    disabled={
+                      !businessName.trim() || businessCashFlow.trim() === ""
+                    }
+                  >
+                    {t("Buy")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -1847,7 +2543,7 @@ function RatRaceDashboardSection({
 
           {businesses.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-background/70 px-3 py-3 text-sm text-muted-foreground">
-              No businesses yet.
+              {t("No businesses yet.")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -1856,9 +2552,13 @@ function RatRaceDashboardSection({
                   key={business.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/70 px-3 py-2.5"
                 >
-                  <div className="flex-1 text-sm font-medium text-foreground">{business.name}</div>
+                  <div className="flex-1 text-sm font-medium text-foreground">
+                    {business.name}
+                  </div>
                   <div className="text-sm font-semibold text-foreground">
-                    {currencyFormatter.format(parseNumericValue(business.cashFlow))}
+                    {currencyFormatter.format(
+                      parseNumericValue(business.cashFlow),
+                    )}
                   </div>
                 </div>
               ))}
@@ -1870,27 +2570,27 @@ function RatRaceDashboardSection({
   );
 }
 
-function CongratulationsSection({
-  onRestart,
-}: {
-  onRestart: () => void;
-}) {
+function CongratulationsSection({ onRestart }: { onRestart: () => void }) {
+  const { t } = useI18n();
+
   return (
     <Card className="overflow-hidden rounded-[1.75rem]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Congratulations</CardTitle>
+        <CardTitle className="text-xl">{t("Congratulations")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
         <div className="rounded-2xl border border-border bg-muted/50 px-4 py-6 text-center">
           <div className="text-4xl">🎉</div>
-          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">You won the game!</h2>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+            {t("You won the game!")}
+          </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            You reached or exceeded the target cashflow income.
+            {t("You reached or exceeded the target cashflow income.")}
           </p>
         </div>
 
         <Button type="button" className="w-full" onClick={onRestart}>
-          Play again
+          {t("Play again")}
         </Button>
       </CardContent>
     </Card>
@@ -1910,6 +2610,7 @@ function AccountSection({
   onEarnCashflow: () => void;
   onSpend: (amount: number) => void;
 }) {
+  const { t, currencyFormatter, timeLocale } = useI18n();
   const [spendOpen, setSpendOpen] = useState(false);
   const [spendAmount, setSpendAmount] = useState("");
   const [spendError, setSpendError] = useState("");
@@ -1917,12 +2618,12 @@ function AccountSection({
   const submitSpend = () => {
     const amount = parseNumericValue(spendAmount);
     if (amount <= 0) {
-      setSpendError("Enter a valid amount.");
+      setSpendError(t("Enter a valid amount."));
       return;
     }
 
     if (amount > balance) {
-      setSpendError("Not enough balance.");
+      setSpendError(t("Not enough balance."));
       return;
     }
 
@@ -1936,12 +2637,12 @@ function AccountSection({
     <div className="grid min-h-[62dvh] grid-rows-2 gap-4">
       <Card className="overflow-hidden rounded-[1.75rem]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl">Account</CardTitle>
+          <CardTitle className="text-xl">{t("Account")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <div className="rounded-xl border border-border bg-muted/50 px-3 py-3 text-center">
             <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Current balance
+              {t("Current balance")}
             </div>
             <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
               {currencyFormatter.format(balance)}
@@ -1956,23 +2657,25 @@ function AccountSection({
               disabled={netCashflow <= 0}
               className="h-10"
             >
-              Earn cashflow
+              {t("Earn cashflow")}
             </Button>
 
             <Dialog open={spendOpen} onOpenChange={setSpendOpen}>
               <DialogTrigger asChild>
                 <Button type="button" variant="outline" className="h-10">
-                  Spend
+                  {t("Spend")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Spend amount</DialogTitle>
-                  <DialogDescription>Enter the amount to remove from your balance.</DialogDescription>
+                  <DialogTitle>{t("Spend amount")}</DialogTitle>
+                  <DialogDescription>
+                    {t("Enter the amount to remove from your balance.")}
+                  </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-2 pt-2">
-                  <Label htmlFor="spend-amount">Amount</Label>
+                  <Label htmlFor="spend-amount">{t("Amount")}</Label>
                   <Input
                     id="spend-amount"
                     type="number"
@@ -1986,7 +2689,9 @@ function AccountSection({
                     }}
                     placeholder="0"
                   />
-                  {spendError ? <p className="text-sm text-destructive">{spendError}</p> : null}
+                  {spendError ? (
+                    <p className="text-sm text-destructive">{spendError}</p>
+                  ) : null}
                 </div>
 
                 <DialogFooter className="pt-2">
@@ -1999,10 +2704,10 @@ function AccountSection({
                       setSpendError("");
                     }}
                   >
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                   <Button type="button" onClick={submitSpend}>
-                    Confirm
+                    {t("Confirm")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -2013,12 +2718,12 @@ function AccountSection({
 
       <Card className="overflow-hidden rounded-[1.75rem]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Transactions</CardTitle>
+          <CardTitle className="text-base">{t("Transactions")}</CardTitle>
         </CardHeader>
         <CardContent className="h-full pt-0">
           {transactions.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-              No transactions yet.
+              {t("No transactions yet.")}
             </div>
           ) : (
             <div className="h-full space-y-2 overflow-y-auto pr-1">
@@ -2028,12 +2733,17 @@ function AccountSection({
                   className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-foreground">{transaction.label}</div>
+                    <div className="text-sm font-medium text-foreground">
+                      {transaction.label}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(transaction.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(transaction.createdAt).toLocaleTimeString(
+                        timeLocale,
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
                     </div>
                   </div>
                   <div
@@ -2061,25 +2771,59 @@ function AvatarSelectionSection({
 }: {
   onSelectAvatar: (avatar: AvatarPreset) => void;
 }) {
+  const { t, currencyFormatter } = useI18n();
+  const [selectedAvatarOption, setSelectedAvatarOption] = useState("");
+  const selectedAvatarOptionData = useMemo(
+    () =>
+      avatarPresets.find((avatar) => avatar.id === selectedAvatarOption) ??
+      null,
+    [selectedAvatarOption],
+  );
+
+  const onSelectAvatarById = (avatarId: string) => {
+    setSelectedAvatarOption(avatarId);
+    const avatar = avatarPresets.find((entry) => entry.id === avatarId);
+    if (!avatar) return;
+    onSelectAvatar(avatar);
+  };
+
   return (
     <Card className="overflow-hidden rounded-[1.75rem]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Choose your avatar</CardTitle>
+        <CardTitle className="text-xl">{t("Choose your avatar")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
-        <p className="text-sm text-muted-foreground">Start by selecting a predefined profile.</p>
-
-        {avatarPresets.map((avatar) => (
-          <div key={avatar.id} className="rounded-xl border border-border bg-muted/50 px-3 py-3">
-            <div className="text-base font-semibold text-foreground">{avatar.name}</div>
-            <div className="mt-1 text-sm text-muted-foreground">
-              Salary {currencyFormatter.format(parseNumericValue(avatar.salary))}
+        <p className="text-sm text-muted-foreground">
+          {t("Start by selecting a predefined profile.")}
+        </p>
+        <div className="space-y-2 rounded-xl border border-border bg-muted/50 px-3 py-3">
+          <Label htmlFor="avatar-select">{t("Choose your avatar")}</Label>
+          <select
+            id="avatar-select"
+            value={selectedAvatarOption}
+            onChange={(event) => onSelectAvatarById(event.target.value)}
+            className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">{t("Select")}</option>
+            {avatarPresets.map((avatar) => (
+              <option key={avatar.id} value={avatar.id}>
+                {t(avatar.name)}
+              </option>
+            ))}
+          </select>
+          {selectedAvatarOptionData ? (
+            <div className="text-sm text-muted-foreground">
+              {t("Salary")}{" "}
+              {currencyFormatter.format(
+                parseNumericValue(selectedAvatarOptionData.salary),
+              )}
             </div>
-            <Button type="button" className="mt-3 w-full" onClick={() => onSelectAvatar(avatar)}>
-              Select {avatar.name}
-            </Button>
-          </div>
-        ))}
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              {t("Salary")} {currencyFormatter.format(0)}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -2088,7 +2832,6 @@ function AvatarSelectionSection({
 function LiabilitySection({
   realEstateAssets,
   liabilityValues,
-  setLiabilityValues,
   onPayBackLiability,
   canPayBackLiability,
   onGetBankLoan,
@@ -2097,13 +2840,13 @@ function LiabilitySection({
 }: {
   realEstateAssets: RealEstateAssetEntry[];
   liabilityValues: Record<LiabilityKey, string>;
-  setLiabilityValues: Dispatch<SetStateAction<Record<LiabilityKey, string>>>;
   onPayBackLiability: (key: LiabilityKey) => void;
   canPayBackLiability: (key: LiabilityKey) => boolean;
   onGetBankLoan: (amount: number) => string | null;
   onPayBackBankLoan: (amount: number) => string | null;
   canUseBankLoanPayBack: boolean;
 }) {
+  const { t, currencyFormatter } = useI18n();
   const [bankLoanOpen, setBankLoanOpen] = useState(false);
   const [bankLoanPayBackOpen, setBankLoanPayBackOpen] = useState(false);
   const [bankLoanRequestAmount, setBankLoanRequestAmount] = useState("");
@@ -2115,10 +2858,13 @@ function LiabilitySection({
     () =>
       realEstateAssets.map((entry) => ({
         id: entry.id,
-        name: entry.name || "Unnamed asset",
-        value: Math.max(parseNumericValue(entry.cost) - parseNumericValue(entry.downPayment), 0),
+        name: entry.name || t("Unnamed asset"),
+        value: Math.max(
+          parseNumericValue(entry.cost) - parseNumericValue(entry.downPayment),
+          0,
+        ),
       })),
-    [realEstateAssets]
+    [realEstateAssets, t],
   );
 
   const totalLiabilities = useMemo(() => {
@@ -2126,17 +2872,13 @@ function LiabilitySection({
       return sum + (Number.parseFloat(liabilityValues[liability.key]) || 0);
     }, 0);
 
-    const realEstateTotal = autoLiabilities.reduce((sum, liability) => sum + liability.value, 0);
+    const realEstateTotal = autoLiabilities.reduce(
+      (sum, liability) => sum + liability.value,
+      0,
+    );
 
     return fixedTotal + realEstateTotal;
   }, [autoLiabilities, liabilityValues]);
-
-  const updateLiabilityValue = (key: LiabilityKey, value: string) => {
-    setLiabilityValues((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  };
 
   const submitGetBankLoan = () => {
     const requestedAmount = parseNumericValue(bankLoanRequestAmount);
@@ -2168,7 +2910,7 @@ function LiabilitySection({
     <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          Total liabilities
+          {t("Total liabilities")}
         </div>
         <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
           {currencyFormatter.format(totalLiabilities)}
@@ -2181,8 +2923,11 @@ function LiabilitySection({
             key={liability.key}
             className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
           >
-            <label htmlFor={liability.key} className="flex-1 text-sm font-medium text-foreground">
-              {liability.label}
+            <label
+              htmlFor={liability.key}
+              className="flex-1 text-sm font-medium text-foreground"
+            >
+              {t(liability.label)}
             </label>
             <div className="flex w-[120px] items-center justify-end">
               <Input
@@ -2192,9 +2937,8 @@ function LiabilitySection({
                 min="0"
                 step="100"
                 value={liabilityValues[liability.key]}
-                onChange={(event) => updateLiabilityValue(liability.key, event.target.value)}
                 placeholder="0"
-                readOnly={liability.key === "bankLoan"}
+                readOnly
                 className="h-9 rounded-lg text-right text-sm"
               />
             </div>
@@ -2212,17 +2956,21 @@ function LiabilitySection({
                 >
                   <DialogTrigger asChild>
                     <Button type="button" variant="outline" size="sm">
-                      Get loan
+                      {t("Get loan")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Get bank loan</DialogTitle>
-                      <DialogDescription>Enter a loan amount in multiples of 1000.</DialogDescription>
+                      <DialogTitle>{t("Get bank loan")}</DialogTitle>
+                      <DialogDescription>
+                        {t("Enter a loan amount in multiples of 1000.")}
+                      </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-2 pt-2">
-                      <Label htmlFor="bank-loan-amount">Loan amount</Label>
+                      <Label htmlFor="bank-loan-amount">
+                        {t("Loan amount")}
+                      </Label>
                       <Input
                         id="bank-loan-amount"
                         type="number"
@@ -2236,7 +2984,11 @@ function LiabilitySection({
                         }}
                         placeholder="1000"
                       />
-                      {bankLoanRequestError ? <p className="text-sm text-destructive">{bankLoanRequestError}</p> : null}
+                      {bankLoanRequestError ? (
+                        <p className="text-sm text-destructive">
+                          {bankLoanRequestError}
+                        </p>
+                      ) : null}
                     </div>
 
                     <DialogFooter className="pt-2">
@@ -2249,10 +3001,10 @@ function LiabilitySection({
                           setBankLoanRequestError("");
                         }}
                       >
-                        Cancel
+                        {t("Cancel")}
                       </Button>
                       <Button type="button" onClick={submitGetBankLoan}>
-                        Confirm
+                        {t("Confirm")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -2269,18 +3021,27 @@ function LiabilitySection({
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" disabled={!canUseBankLoanPayBack}>
-                      Pay back
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!canUseBankLoanPayBack}
+                    >
+                      {t("Pay back")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Pay back bank loan</DialogTitle>
-                      <DialogDescription>Enter a payback amount in multiples of 1000.</DialogDescription>
+                      <DialogTitle>{t("Pay back bank loan")}</DialogTitle>
+                      <DialogDescription>
+                        {t("Enter a payback amount in multiples of 1000.")}
+                      </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-2 pt-2">
-                      <Label htmlFor="bank-loan-payback-amount">Payback amount</Label>
+                      <Label htmlFor="bank-loan-payback-amount">
+                        {t("Payback amount")}
+                      </Label>
                       <Input
                         id="bank-loan-payback-amount"
                         type="number"
@@ -2299,7 +3060,9 @@ function LiabilitySection({
 
                           const parsed = parseNumericValue(nextValue);
                           if (parsed > 0 && !isMultipleOfThousand(parsed)) {
-                            setBankLoanPayBackError("Amount must be a multiple of 1000.");
+                            setBankLoanPayBackError(
+                              t("Amount must be a multiple of 1000."),
+                            );
                             return;
                           }
 
@@ -2307,7 +3070,11 @@ function LiabilitySection({
                         }}
                         placeholder="1000"
                       />
-                      {bankLoanPayBackError ? <p className="text-sm text-destructive">{bankLoanPayBackError}</p> : null}
+                      {bankLoanPayBackError ? (
+                        <p className="text-sm text-destructive">
+                          {bankLoanPayBackError}
+                        </p>
+                      ) : null}
                     </div>
 
                     <DialogFooter className="pt-2">
@@ -2320,10 +3087,10 @@ function LiabilitySection({
                           setBankLoanPayBackError("");
                         }}
                       >
-                        Cancel
+                        {t("Cancel")}
                       </Button>
                       <Button type="button" onClick={submitPayBackBankLoan}>
-                        Confirm
+                        {t("Confirm")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -2337,7 +3104,7 @@ function LiabilitySection({
                 onClick={() => onPayBackLiability(liability.key)}
                 disabled={!canPayBackLiability(liability.key)}
               >
-                Pay back
+                {t("Pay back")}
               </Button>
             ) : null}
           </div>
@@ -2345,11 +3112,13 @@ function LiabilitySection({
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-        <div className="mb-2 text-base font-semibold text-foreground">Real Estate / Business</div>
+        <div className="mb-2 text-base font-semibold text-foreground">
+          {t("Real Estate / Business")}
+        </div>
 
         {autoLiabilities.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
-            Automatically filled from asset entries.
+            {t("Automatically filled from asset entries.")}
           </div>
         ) : (
           <div className="space-y-2">
@@ -2358,7 +3127,9 @@ function LiabilitySection({
                 key={liability.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
               >
-                <div className="flex-1 text-sm font-medium text-foreground">{liability.name}</div>
+                <div className="flex-1 text-sm font-medium text-foreground">
+                  {liability.name}
+                </div>
                 <div className="text-sm font-semibold text-foreground">
                   {currencyFormatter.format(liability.value)}
                 </div>
@@ -2374,26 +3145,64 @@ function LiabilitySection({
 export default function Home() {
   const initialState = useMemo(() => readStoredGameState(), []);
   const [activeTab, setActiveTab] = useState<TabId>(initialState.activeTab);
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(initialState.selectedAvatarId);
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(
+    initialState.selectedAvatarId,
+  );
   const [savings, setSavings] = useState(initialState.savings);
   const [salary, setSalary] = useState(initialState.salary);
-  const [expenseValues, setExpenseValues] = useState<Record<ExpenseKey, string>>(initialState.expenseValues);
-  const [childCount, setChildCount] = useState<ChildCount>(initialState.childCount);
+  const [expenseValues, setExpenseValues] = useState<
+    Record<ExpenseKey, string>
+  >(initialState.expenseValues);
+  const [childCount, setChildCount] = useState<ChildCount>(
+    initialState.childCount,
+  );
   const [childCost, setChildCost] = useState(initialState.childCost);
-  const [liabilityValues, setLiabilityValues] = useState<Record<LiabilityKey, string>>(initialState.liabilityValues);
-  const [preciousMetals, setPreciousMetals] = useState<PreciousMetalEntry[]>(initialState.preciousMetals);
+  const [liabilityValues, setLiabilityValues] = useState<
+    Record<LiabilityKey, string>
+  >(initialState.liabilityValues);
+  const [preciousMetals, setPreciousMetals] = useState<PreciousMetalEntry[]>(
+    initialState.preciousMetals,
+  );
   const [funds, setFunds] = useState<FundEntry[]>(initialState.funds);
-  const [fundIncomeEntries, setFundIncomeEntries] = useState<IncomeEntry[]>(initialState.fundIncomeEntries);
-  const [realEstateIncomeEntries, setRealEstateIncomeEntries] = useState<IncomeEntry[]>(initialState.realEstateIncomeEntries);
-  const [realEstateAssets, setRealEstateAssets] = useState<RealEstateAssetEntry[]>(initialState.realEstateAssets);
-  const [accountBalance, setAccountBalance] = useState(initialState.accountBalance);
-  const [transactions, setTransactions] = useState<TransactionEntry[]>(initialState.transactions);
-  const [isRatraceMode, setIsRatraceMode] = useState(initialState.isRatraceMode);
-  const [businessEntries, setBusinessEntries] = useState<BusinessEntry[]>(initialState.businessEntries);
+  const [fundIncomeEntries, setFundIncomeEntries] = useState<IncomeEntry[]>(
+    initialState.fundIncomeEntries,
+  );
+  const [realEstateIncomeEntries, setRealEstateIncomeEntries] = useState<
+    IncomeEntry[]
+  >(initialState.realEstateIncomeEntries);
+  const [realEstateAssets, setRealEstateAssets] = useState<
+    RealEstateAssetEntry[]
+  >(initialState.realEstateAssets);
+  const [accountBalance, setAccountBalance] = useState(
+    initialState.accountBalance,
+  );
+  const [transactions, setTransactions] = useState<TransactionEntry[]>(
+    initialState.transactions,
+  );
+  const [isRatraceMode, setIsRatraceMode] = useState(
+    initialState.isRatraceMode,
+  );
+  const [businessEntries, setBusinessEntries] = useState<BusinessEntry[]>(
+    initialState.businessEntries,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const hasHydratedRef = useRef(false);
-  const selectedAvatar = avatarPresets.find((avatar) => avatar.id === selectedAvatarId) ?? null;
+
+  const t = useCallback((value: string) => value, []);
+  const currencyFormatter = useMemo(() => getCurrencyFormatter(), []);
+  const timeLocale = "en-US";
+  const i18n = useMemo<I18nContextValue>(
+    () => ({
+      t,
+      currencyFormatter,
+      timeLocale,
+    }),
+    [currencyFormatter, t, timeLocale],
+  );
+
+  const selectedAvatar =
+    avatarPresets.find((avatar) => avatar.id === selectedAvatarId) ?? null;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2422,27 +3231,49 @@ export default function Home() {
         transactions,
         isRatraceMode,
         businessEntries,
-      })
+      }),
     );
-  }, [accountBalance, activeTab, businessEntries, childCost, childCount, expenseValues, funds, fundIncomeEntries, isRatraceMode, liabilityValues, preciousMetals, realEstateAssets, realEstateIncomeEntries, salary, savings, selectedAvatarId, transactions]);
+  }, [
+    accountBalance,
+    activeTab,
+    businessEntries,
+    childCost,
+    childCount,
+    expenseValues,
+    funds,
+    fundIncomeEntries,
+    isRatraceMode,
+    liabilityValues,
+    preciousMetals,
+    realEstateAssets,
+    realEstateIncomeEntries,
+    salary,
+    savings,
+    selectedAvatarId,
+    transactions,
+  ]);
 
   const salaryTotal = parseNumericValue(salary);
-  const interestDividendsTotal = fundIncomeEntries.reduce((sum, entry) => sum + parseNumericValue(entry.amount), 0);
+  const interestDividendsTotal = fundIncomeEntries.reduce(
+    (sum, entry) => sum + parseNumericValue(entry.amount),
+    0,
+  );
   const realEstateBusinessIncomeTotal = realEstateIncomeEntries.reduce(
     (sum, entry) => sum + parseNumericValue(entry.amount),
-    0
+    0,
   );
-  const passiveIncomeTotal = interestDividendsTotal + realEstateBusinessIncomeTotal;
+  const passiveIncomeTotal =
+    interestDividendsTotal + realEstateBusinessIncomeTotal;
   const totalIncome = salaryTotal + passiveIncomeTotal;
   const totalExpenses = useMemo(
     () => getTotalExpenses(expenseValues, childCount, childCost),
-    [expenseValues, childCount, childCost]
+    [expenseValues, childCount, childCost],
   );
   const netCashflow = totalIncome - totalExpenses;
   const ratRaceCashflowIncome = useMemo(() => {
     const businessCashflowTotal = businessEntries.reduce(
       (sum, entry) => sum + parseNumericValue(entry.cashFlow),
-      0
+      0,
     );
 
     return passiveIncomeTotal * 100 + businessCashflowTotal;
@@ -2483,7 +3314,7 @@ export default function Home() {
         id: createEntryId(),
         type: "earn",
         amount: startingBalance,
-        label: "Leave the rat race",
+        label: t("Leave the rat race"),
         createdAt: Date.now(),
       },
       ...current,
@@ -2531,7 +3362,7 @@ export default function Home() {
         id: createEntryId(),
         type: "earn",
         amount: parsedCashFlow,
-        label: `Buy business: ${name}`,
+        label: `${t("Buy business: ")}${name}`,
         createdAt: Date.now(),
       },
       ...current,
@@ -2547,7 +3378,7 @@ export default function Home() {
         id: createEntryId(),
         type: "earn",
         amount: netCashflow,
-        label: "Earn cashflow",
+        label: t("Earn cashflow"),
         createdAt: Date.now(),
       },
       ...current,
@@ -2564,7 +3395,7 @@ export default function Home() {
         id: createEntryId(),
         type: "spend",
         amount,
-        label: "Spend",
+        label: t("Spend"),
         createdAt: Date.now(),
       },
       ...current,
@@ -2595,8 +3426,9 @@ export default function Home() {
   };
 
   const getBankLoan = (amount: number) => {
-    if (amount <= 0) return "Enter a valid amount.";
-    if (!isMultipleOfThousand(amount)) return "Amount must be a multiple of 1000.";
+    if (amount <= 0) return t("Enter a valid amount.");
+    if (!isMultipleOfThousand(amount))
+      return t("Amount must be a multiple of 1000.");
 
     const currentBankLoan = parseNumericValue(liabilityValues.bankLoan);
     const nextBankLoan = currentBankLoan + amount;
@@ -2615,7 +3447,7 @@ export default function Home() {
         id: createEntryId(),
         type: "earn",
         amount,
-        label: "Get bank loan",
+        label: t("Get bank loan"),
         createdAt: Date.now(),
       },
       ...current,
@@ -2624,12 +3456,14 @@ export default function Home() {
   };
 
   const payBackBankLoan = (amount: number) => {
-    if (amount <= 0) return "Enter a valid amount.";
-    if (!isMultipleOfThousand(amount)) return "Amount must be a multiple of 1000.";
+    if (amount <= 0) return t("Enter a valid amount.");
+    if (!isMultipleOfThousand(amount))
+      return t("Amount must be a multiple of 1000.");
 
     const currentBankLoan = parseNumericValue(liabilityValues.bankLoan);
-    if (amount > currentBankLoan) return "Payback amount cannot exceed current bank loan.";
-    if (amount > accountBalance) return "Not enough balance.";
+    if (amount > currentBankLoan)
+      return t("Payback amount cannot exceed current bank loan.");
+    if (amount > accountBalance) return t("Not enough balance.");
 
     const nextBankLoan = currentBankLoan - amount;
 
@@ -2647,7 +3481,7 @@ export default function Home() {
         id: createEntryId(),
         type: "spend",
         amount,
-        label: "Pay back bank loan",
+        label: t("Pay back bank loan"),
         createdAt: Date.now(),
       },
       ...current,
@@ -2668,7 +3502,7 @@ export default function Home() {
         id: createEntryId(),
         type: "spend",
         amount,
-        label: `Pay back ${fixedLiabilities.find((entry) => entry.key === key)?.label ?? "liability"}`,
+        label: `${t("Pay back ")}${t(fixedLiabilities.find((entry) => entry.key === key)?.label ?? "liability")}`,
         createdAt: Date.now(),
       },
       ...current,
@@ -2704,222 +3538,248 @@ export default function Home() {
   const visibleTabs = isRatraceMode ? [tabs[0], tabs[5]] : tabs;
 
   return (
-    <div className="min-h-[100dvh] bg-background px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-6 text-foreground sm:pt-8">
-      <main className="mx-auto flex w-full max-w-sm flex-col gap-5">
-        <header className="px-1 pb-1">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Cashflow App
-              </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                {selectedAvatarId ? visibleTabs.find((tab) => tab.id === activeTab)?.label : "Avatar setup"}
-              </h1>
+    <I18nContext.Provider value={i18n}>
+      <div className="min-h-[100dvh] bg-background px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-6 text-foreground sm:pt-8">
+        <main className="mx-auto flex w-full max-w-sm flex-col gap-5">
+          <header className="px-1 pb-1">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  {t("Cashflow App")}
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                  {selectedAvatarId
+                    ? t(
+                        visibleTabs.find((tab) => tab.id === activeTab)
+                          ?.label ?? "",
+                      )
+                    : t("Avatar setup")}
+                </h1>
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t("Open menu")}
+                onClick={() => setMenuOpen(true)}
+                className="mt-1 h-10 w-10 rounded-full"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
             </div>
+          </header>
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Open menu"
-              onClick={() => setMenuOpen(true)}
-              className="mt-1 h-10 w-10 rounded-full"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
-        </header>
+          {!selectedAvatarId && (
+            <AvatarSelectionSection onSelectAvatar={applyAvatarPreset} />
+          )}
 
-        {!selectedAvatarId && (
-          <AvatarSelectionSection onSelectAvatar={applyAvatarPreset} />
-        )}
+          {selectedAvatarId &&
+            selectedAvatar &&
+            activeTab === "dashboard" &&
+            isRatraceMode &&
+            hasReachedTarget && (
+              <CongratulationsSection onRestart={restartGame} />
+            )}
 
-        {selectedAvatarId && selectedAvatar && activeTab === "dashboard" && isRatraceMode && hasReachedTarget && (
-          <CongratulationsSection onRestart={restartGame} />
-        )}
+          {selectedAvatarId &&
+            selectedAvatar &&
+            activeTab === "dashboard" &&
+            isRatraceMode &&
+            !hasReachedTarget && (
+              <RatRaceDashboardSection
+                cashflowIncome={ratRaceCashflowIncome}
+                businesses={businessEntries}
+                onBuyBusiness={buyBusiness}
+                targetCashflowIncome={targetCashflowIncome}
+                differenceToTarget={differenceToTarget}
+              />
+            )}
 
-        {selectedAvatarId && selectedAvatar && activeTab === "dashboard" && isRatraceMode && !hasReachedTarget && (
-          <RatRaceDashboardSection
-            cashflowIncome={ratRaceCashflowIncome}
-            businesses={businessEntries}
-            onBuyBusiness={buyBusiness}
-            targetCashflowIncome={targetCashflowIncome}
-            differenceToTarget={differenceToTarget}
-          />
-        )}
+          {selectedAvatarId &&
+            selectedAvatar &&
+            activeTab === "dashboard" &&
+            !isRatraceMode && (
+              <DashboardSection
+                avatarName={selectedAvatar.name}
+                AvatarIcon={getAvatarIcon(selectedAvatar.id)}
+                salaryTotal={salaryTotal}
+                passiveIncomeTotal={passiveIncomeTotal}
+                incomeTotal={totalIncome}
+                totalExpenses={totalExpenses}
+                netCashflow={netCashflow}
+                onLeaveRatRace={leaveRatRace}
+              />
+            )}
 
-        {selectedAvatarId && selectedAvatar && activeTab === "dashboard" && !isRatraceMode && (
-          <DashboardSection
-            avatarName={selectedAvatar.name}
-            AvatarIcon={getAvatarIcon(selectedAvatar.id)}
-            salaryTotal={salaryTotal}
-            passiveIncomeTotal={passiveIncomeTotal}
-            incomeTotal={totalIncome}
-            totalExpenses={totalExpenses}
-            netCashflow={netCashflow}
-            onLeaveRatRace={leaveRatRace}
-          />
-        )}
+          {selectedAvatarId && activeTab === "income" && !isRatraceMode && (
+            <IncomeSection
+              salary={salary}
+              fundIncomeEntries={fundIncomeEntries}
+              realEstateIncomeEntries={realEstateIncomeEntries}
+            />
+          )}
 
-        {selectedAvatarId && activeTab === "income" && !isRatraceMode && (
-          <IncomeSection
-            salary={salary}
-            setSalary={setSalary}
-            fundIncomeEntries={fundIncomeEntries}
-            realEstateIncomeEntries={realEstateIncomeEntries}
-          />
-        )}
+          {selectedAvatarId && activeTab === "expenses" && !isRatraceMode && (
+            <ExpenseSection
+              expenseValues={expenseValues}
+              childCount={childCount}
+              setChildCount={setChildCount}
+              childCost={childCost}
+              totalExpenses={totalExpenses}
+            />
+          )}
 
-        {selectedAvatarId && activeTab === "expenses" && !isRatraceMode && (
-          <ExpenseSection
-            expenseValues={expenseValues}
-            setExpenseValues={setExpenseValues}
-            childCount={childCount}
-            setChildCount={setChildCount}
-            childCost={childCost}
-            setChildCost={setChildCost}
-            totalExpenses={totalExpenses}
-          />
-        )}
+          {selectedAvatarId && activeTab === "assets" && !isRatraceMode && (
+            <AssetSection
+              accountBalance={accountBalance}
+              savings={savings}
+              preciousMetals={preciousMetals}
+              setPreciousMetals={setPreciousMetals}
+              funds={funds}
+              setFunds={setFunds}
+              realEstateAssets={realEstateAssets}
+              setRealEstateAssets={setRealEstateAssets}
+              setFundIncomeEntries={setFundIncomeEntries}
+              setRealEstateIncomeEntries={setRealEstateIncomeEntries}
+              onAssetPurchase={spendForAssetPurchase}
+              onAssetSale={earnFromAssetSale}
+            />
+          )}
 
-        {selectedAvatarId && activeTab === "assets" && !isRatraceMode && (
-          <AssetSection
-            accountBalance={accountBalance}
-            savings={savings}
-            setSavings={setSavings}
-            preciousMetals={preciousMetals}
-            setPreciousMetals={setPreciousMetals}
-            funds={funds}
-            setFunds={setFunds}
-            realEstateAssets={realEstateAssets}
-            setRealEstateAssets={setRealEstateAssets}
-            setFundIncomeEntries={setFundIncomeEntries}
-            setRealEstateIncomeEntries={setRealEstateIncomeEntries}
-            onAssetPurchase={spendForAssetPurchase}
-            onAssetSale={earnFromAssetSale}
-          />
-        )}
+          {selectedAvatarId &&
+            activeTab === "liabilities" &&
+            !isRatraceMode && (
+              <LiabilitySection
+                realEstateAssets={realEstateAssets}
+                liabilityValues={liabilityValues}
+                onPayBackLiability={payBackLiability}
+                canPayBackLiability={canPayBackLiability}
+                onGetBankLoan={getBankLoan}
+                onPayBackBankLoan={payBackBankLoan}
+                canUseBankLoanPayBack={
+                  parseNumericValue(liabilityValues.bankLoan) > 0 &&
+                  accountBalance > 0
+                }
+              />
+            )}
 
-        {selectedAvatarId && activeTab === "liabilities" && !isRatraceMode && (
-          <LiabilitySection
-            realEstateAssets={realEstateAssets}
-            liabilityValues={liabilityValues}
-            setLiabilityValues={setLiabilityValues}
-            onPayBackLiability={payBackLiability}
-            canPayBackLiability={canPayBackLiability}
-            onGetBankLoan={getBankLoan}
-            onPayBackBankLoan={payBackBankLoan}
-            canUseBankLoanPayBack={
-              parseNumericValue(liabilityValues.bankLoan) > 0 && accountBalance > 0
-            }
-          />
-        )}
+          {selectedAvatarId && activeTab === "account" && (
+            <AccountSection
+              balance={accountBalance}
+              netCashflow={netCashflow}
+              transactions={transactions}
+              onEarnCashflow={
+                isRatraceMode
+                  ? () => {
+                      if (ratRaceCashflowIncome <= 0) return;
+                      setAccountBalance(
+                        (current) => current + ratRaceCashflowIncome,
+                      );
+                      setTransactions((current) => [
+                        {
+                          id: createEntryId(),
+                          type: "earn",
+                          amount: ratRaceCashflowIncome,
+                          label: t("Earn cashflow income"),
+                          createdAt: Date.now(),
+                        },
+                        ...current,
+                      ]);
+                    }
+                  : earnCashflow
+              }
+              onSpend={spendFromBalance}
+            />
+          )}
+        </main>
 
-        {selectedAvatarId && activeTab === "account" && (
-          <AccountSection
-            balance={accountBalance}
-            netCashflow={netCashflow}
-            transactions={transactions}
-            onEarnCashflow={
-              isRatraceMode
-                ? () => {
-                    if (ratRaceCashflowIncome <= 0) return;
-                    setAccountBalance((current) => current + ratRaceCashflowIncome);
-                    setTransactions((current) => [
-                      {
-                        id: createEntryId(),
-                        type: "earn",
-                        amount: ratRaceCashflowIncome,
-                        label: "Earn cashflow income",
-                        createdAt: Date.now(),
-                      },
-                      ...current,
-                    ]);
-                  }
-                : earnCashflow
-            }
-            onSpend={spendFromBalance}
-          />
-        )}
-      </main>
+        <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+          <DialogContent className="sm:max-w-xs">
+            <DialogHeader>
+              <DialogTitle>{t("Menu")}</DialogTitle>
+              </DialogHeader>
 
-      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-        <DialogContent className="sm:max-w-xs">
-          <DialogHeader>
-            <DialogTitle>Menu</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-destructive text-destructive hover:bg-destructive/10"
-              onClick={() => {
-                setMenuOpen(false);
-                setConfirmResetOpen(true);
-              }}
-            >
-              Reset game
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
-        <DialogContent className="sm:max-w-xs">
-          <DialogHeader>
-            <DialogTitle>Reset game?</DialogTitle>
-            <DialogDescription>
-              This will permanently delete your current progress and return to avatar selection.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => setConfirmResetOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive/10"
-              onClick={() => {
-                setConfirmResetOpen(false);
-                restartGame();
-              }}
-            >
-              Reset
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {selectedAvatarId ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-sm px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <nav className="flex items-center justify-between gap-1 rounded-[1.5rem] border border-border bg-card/80 p-2 shadow-sm backdrop-blur-sm">
-            {visibleTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = tab.id === activeTab;
-
-              return (
+              <div className="space-y-2 pt-2">
                 <Button
-                  key={tab.id}
                   type="button"
-                  variant={isActive ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex h-auto flex-1 flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-[10px] font-medium ${
-                    isActive ? "shadow-sm" : "text-muted-foreground"
-                  }`}
-                  aria-label={tab.label}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className={isActive ? "mt-1" : "sr-only"}>{tab.label}</span>
-                </Button>
-              );
-            })}
-          </nav>
-        </div>
-      ) : null}
-    </div>
+                  variant="outline"
+                className="w-full border-destructive text-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmResetOpen(true);
+                }}
+              >
+                {t("Reset game")}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
+          <DialogContent className="sm:max-w-xs">
+            <DialogHeader>
+              <DialogTitle>{t("Reset game?")}</DialogTitle>
+              <DialogDescription>
+                {t(
+                  "This will permanently delete your current progress and return to avatar selection.",
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmResetOpen(false)}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-destructive text-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  setConfirmResetOpen(false);
+                  restartGame();
+                }}
+              >
+                {t("Reset")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {selectedAvatarId ? (
+          <div className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-sm px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <nav className="flex items-center justify-between gap-1 rounded-[1.5rem] border border-border bg-card/80 p-2 shadow-sm backdrop-blur-sm">
+              {visibleTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = tab.id === activeTab;
+
+                return (
+                  <Button
+                    key={tab.id}
+                    type="button"
+                    variant={isActive ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex h-auto flex-1 flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-[10px] font-medium ${
+                      isActive ? "shadow-sm" : "text-muted-foreground"
+                    }`}
+                    aria-label={t(tab.label)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className={isActive ? "mt-1" : "sr-only"}>
+                      {t(tab.label)}
+                    </span>
+                  </Button>
+                );
+              })}
+            </nav>
+          </div>
+        ) : null}
+      </div>
+    </I18nContext.Provider>
   );
 }
