@@ -1,6 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Cashflow icon">
-  <rect width="128" height="128" rx="28" fill="#0f172a"/>
-  <circle cx="64" cy="64" r="41" fill="#f8fafc" opacity="0.12"/>
-  <path d="M37 84V44h18.6c12.2 0 18.8 6.1 18.8 16.1S68.6 76.3 56.6 76.3H48.5V84H37zm11.5-11.4h7.6c5.8 0 9.1-2.8 9.1-8.5s-3.3-8.5-9.1-8.5h-7.6v17Z" fill="#f8fafc"/>
-  <path d="M77 84V44h11.7v26.7H99V84H77Z" fill="#f8fafc" opacity="0.9"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Cashflow icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="240" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="326" fill="none" stroke="url(#ring)" stroke-width="92"/>
+  <circle cx="512" cy="512" r="232" fill="#0f172a"/>
+
+  <path
+    d="M530 365c-68 0-124 44-124 108 0 52 38 84 108 101l42 10c32 8 48 18 48 40 0 28-28 45-70 45-46 0-82-20-108-52l-66 62c36 52 102 85 176 85 102 0 174-57 174-144 0-68-44-102-122-121l-39-9c-28-7-39-16-39-34 0-21 20-36 53-36 37 0 66 14 90 40l64-59c-37-49-93-76-157-76Z"
+    fill="#e2e8f0"
+  />
+  <circle cx="760" cy="288" r="30" fill="#22d3ee" opacity="0.9"/>
 </svg>
