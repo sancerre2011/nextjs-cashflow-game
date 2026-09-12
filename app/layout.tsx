@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { LanguageSync } from "@/components/language-sync";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
+          <LanguageSync />
           {children}
         </ThemeProvider>
       </body>
