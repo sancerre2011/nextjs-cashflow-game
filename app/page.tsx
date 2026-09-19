@@ -29,6 +29,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -3188,6 +3189,11 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
   const hasHydratedRef = useRef(false);
+  const hasMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const t = useCallback((value: string) => value, []);
   const currencyFormatter = useMemo(() => getCurrencyFormatter(), []);
@@ -3535,7 +3541,10 @@ export default function Home() {
     ]);
   };
 
-  const visibleTabs = isRatraceMode ? [tabs[0], tabs[5]] : tabs;
+  const renderedSelectedAvatarId = hasMounted ? selectedAvatarId : null;
+  const renderedActiveTab = hasMounted ? activeTab : "dashboard";
+  const renderedIsRatraceMode = hasMounted ? isRatraceMode : false;
+  const visibleTabs = renderedIsRatraceMode ? [tabs[0], tabs[5]] : tabs;
 
   return (
     <I18nContext.Provider value={i18n}>
@@ -3548,9 +3557,9 @@ export default function Home() {
                   {t("Cashflow App")}
                 </p>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                  {selectedAvatarId
+                  {renderedSelectedAvatarId
                     ? t(
-                        visibleTabs.find((tab) => tab.id === activeTab)
+                        visibleTabs.find((tab) => tab.id === renderedActiveTab)
                           ?.label ?? "",
                       )
                     : t("Avatar setup")}
@@ -3570,22 +3579,22 @@ export default function Home() {
             </div>
           </header>
 
-          {!selectedAvatarId && (
+          {!renderedSelectedAvatarId && (
             <AvatarSelectionSection onSelectAvatar={applyAvatarPreset} />
           )}
 
-          {selectedAvatarId &&
+          {renderedSelectedAvatarId &&
             selectedAvatar &&
-            activeTab === "dashboard" &&
-            isRatraceMode &&
+            renderedActiveTab === "dashboard" &&
+            renderedIsRatraceMode &&
             hasReachedTarget && (
               <CongratulationsSection onRestart={restartGame} />
             )}
 
-          {selectedAvatarId &&
+          {renderedSelectedAvatarId &&
             selectedAvatar &&
-            activeTab === "dashboard" &&
-            isRatraceMode &&
+            renderedActiveTab === "dashboard" &&
+            renderedIsRatraceMode &&
             !hasReachedTarget && (
               <RatRaceDashboardSection
                 cashflowIncome={ratRaceCashflowIncome}
@@ -3596,10 +3605,10 @@ export default function Home() {
               />
             )}
 
-          {selectedAvatarId &&
+          {renderedSelectedAvatarId &&
             selectedAvatar &&
-            activeTab === "dashboard" &&
-            !isRatraceMode && (
+            renderedActiveTab === "dashboard" &&
+            !renderedIsRatraceMode && (
               <DashboardSection
                 avatarName={selectedAvatar.name}
                 AvatarIcon={getAvatarIcon(selectedAvatar.id)}
@@ -3612,7 +3621,9 @@ export default function Home() {
               />
             )}
 
-          {selectedAvatarId && activeTab === "income" && !isRatraceMode && (
+          {renderedSelectedAvatarId &&
+            renderedActiveTab === "income" &&
+            !renderedIsRatraceMode && (
             <IncomeSection
               salary={salary}
               fundIncomeEntries={fundIncomeEntries}
@@ -3620,7 +3631,9 @@ export default function Home() {
             />
           )}
 
-          {selectedAvatarId && activeTab === "expenses" && !isRatraceMode && (
+          {renderedSelectedAvatarId &&
+            renderedActiveTab === "expenses" &&
+            !renderedIsRatraceMode && (
             <ExpenseSection
               expenseValues={expenseValues}
               childCount={childCount}
@@ -3630,7 +3643,9 @@ export default function Home() {
             />
           )}
 
-          {selectedAvatarId && activeTab === "assets" && !isRatraceMode && (
+          {renderedSelectedAvatarId &&
+            renderedActiveTab === "assets" &&
+            !renderedIsRatraceMode && (
             <AssetSection
               accountBalance={accountBalance}
               savings={savings}
@@ -3647,9 +3662,9 @@ export default function Home() {
             />
           )}
 
-          {selectedAvatarId &&
-            activeTab === "liabilities" &&
-            !isRatraceMode && (
+          {renderedSelectedAvatarId &&
+            renderedActiveTab === "liabilities" &&
+            !renderedIsRatraceMode && (
               <LiabilitySection
                 realEstateAssets={realEstateAssets}
                 liabilityValues={liabilityValues}
@@ -3664,13 +3679,13 @@ export default function Home() {
               />
             )}
 
-          {selectedAvatarId && activeTab === "account" && (
+          {renderedSelectedAvatarId && renderedActiveTab === "account" && (
             <AccountSection
               balance={accountBalance}
               netCashflow={netCashflow}
               transactions={transactions}
               onEarnCashflow={
-                isRatraceMode
+                renderedIsRatraceMode
                   ? () => {
                       if (ratRaceCashflowIncome <= 0) return;
                       setAccountBalance(
@@ -3698,12 +3713,12 @@ export default function Home() {
           <DialogContent className="sm:max-w-xs">
             <DialogHeader>
               <DialogTitle>{t("Menu")}</DialogTitle>
-              </DialogHeader>
+            </DialogHeader>
 
-              <div className="space-y-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
+            <div className="space-y-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
                 className="w-full border-destructive text-destructive hover:bg-destructive/10"
                 onClick={() => {
                   setMenuOpen(false);
@@ -3750,12 +3765,12 @@ export default function Home() {
           </DialogContent>
         </Dialog>
 
-        {selectedAvatarId ? (
+        {renderedSelectedAvatarId ? (
           <div className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-sm px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <nav className="flex items-center justify-between gap-1 rounded-[1.5rem] border border-border bg-card/80 p-2 shadow-sm backdrop-blur-sm">
               {visibleTabs.map((tab) => {
                 const Icon = tab.icon;
-                const isActive = tab.id === activeTab;
+                const isActive = tab.id === renderedActiveTab;
 
                 return (
                   <Button
