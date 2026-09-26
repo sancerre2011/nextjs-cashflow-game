@@ -17,7 +17,7 @@ import {
   Stethoscope,
   TrendingDown,
   Truck,
-  UserCircle2,
+  Wallet,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -77,7 +77,7 @@ const tabs = [
   { id: "expenses", label: "Expenses", icon: TrendingDown },
   { id: "assets", label: "Assets", icon: Landmark },
   { id: "liabilities", label: "Liabilities", icon: Building2 },
-  { id: "account", label: "Account", icon: UserCircle2 },
+  { id: "account", label: "Account", icon: Wallet },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -137,6 +137,7 @@ type TransactionEntry = {
   amount: number;
   label: string;
   createdAt: number;
+  cancelled?: boolean;
 };
 
 type BusinessEntry = {
@@ -2601,20 +2602,30 @@ function CongratulationsSection({ onRestart }: { onRestart: () => void }) {
 function AccountSection({
   balance,
   netCashflow,
+  totalIncome,
   transactions,
+  selectedTransactionId,
+  onSelectTransaction,
   onEarnCashflow,
   onSpend,
+  onDonate,
 }: {
   balance: number;
   netCashflow: number;
+  totalIncome: number;
   transactions: TransactionEntry[];
+  selectedTransactionId: string | null;
+  onSelectTransaction: (transactionId: string) => void;
   onEarnCashflow: () => void;
   onSpend: (amount: number) => void;
+  onDonate: (amount: number) => void;
 }) {
   const { t, currencyFormatter, timeLocale } = useI18n();
   const [spendOpen, setSpendOpen] = useState(false);
   const [spendAmount, setSpendAmount] = useState("");
   const [spendError, setSpendError] = useState("");
+  const [donateOpen, setDonateOpen] = useState(false);
+  const donationAmount = totalIncome * 0.1;
 
   const submitSpend = () => {
     const amount = parseNumericValue(spendAmount);
@@ -2632,6 +2643,13 @@ function AccountSection({
     setSpendAmount("");
     setSpendError("");
     setSpendOpen(false);
+  };
+
+  const submitDonation = () => {
+    if (donationAmount <= 0 || donationAmount > balance) return;
+
+    onDonate(donationAmount);
+    setDonateOpen(false);
   };
 
   return (
@@ -2714,6 +2732,65 @@ function AccountSection({
               </DialogContent>
             </Dialog>
           </div>
+
+          <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
+            <DialogTrigger asChild>
+              <Button type="button" variant="secondary" className="h-10 w-full">
+                {t("Donate")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("Donate")}</DialogTitle>
+                <DialogDescription>
+                  {t("This donation equals 10% of your total income.")}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 pt-2">
+                <p className="text-sm text-muted-foreground">
+                  {t("Total income")}: {currencyFormatter.format(totalIncome)}
+                </p>
+                <p className="text-lg font-semibold">
+                  {t("Donation amount")}: {currencyFormatter.format(donationAmount)}
+                </p>
+                {donationAmount > balance ? (
+                  <p className="text-sm font-medium text-destructive">
+                    {t("Donation is not possible because your balance is too low.")}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t("Would you like to spend this donation?")}
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter className="pt-2">
+                {donationAmount > balance ? (
+                  <Button type="button" onClick={() => setDonateOpen(false)}>
+                    {t("OK")}
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => setDonateOpen(false)}
+                    >
+                      {t("No")}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={submitDonation}
+                      disabled={donationAmount <= 0 || donationAmount > balance}
+                    >
+                      {t("Yes")}
+                    </Button>
+                  </>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
@@ -2728,37 +2805,54 @@ function AccountSection({
             </div>
           ) : (
             <div className="h-full space-y-2 overflow-y-auto pr-1">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-3 py-2.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-foreground">
-                      {transaction.label}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(transaction.createdAt).toLocaleTimeString(
-                        timeLocale,
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
-                    </div>
-                  </div>
-                  <div
-                    className={`text-sm font-semibold ${
-                      transaction.type === "earn"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
+              {transactions.map((transaction) => {
+                const isSelected = selectedTransactionId === transaction.id;
+                const isCancelled = transaction.cancelled;
+
+                return (
+                  <button
+                    key={transaction.id}
+                    type="button"
+                    onClick={() => onSelectTransaction(transaction.id)}
+                    className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      isCancelled
+                        ? "border-muted bg-muted/40 opacity-60"
+                        : isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-muted/50"
                     }`}
                   >
-                    {transaction.type === "earn" ? "+" : "-"}
-                    {currencyFormatter.format(transaction.amount)}
-                  </div>
-                </div>
-              ))}
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={`text-sm font-medium ${
+                          isCancelled ? "line-through text-muted-foreground" : "text-foreground"
+                        }`}
+                      >
+                        {transaction.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(transaction.createdAt).toLocaleTimeString(
+                          timeLocale,
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className={`text-sm font-semibold ${
+                        transaction.type === "earn"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
+                      } ${isCancelled ? "line-through" : ""}`}
+                    >
+                      {transaction.type === "earn" ? "+" : "-"}
+                      {currencyFormatter.format(transaction.amount)}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -3188,6 +3282,9 @@ export default function Home() {
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [cancelTransactionOpen, setCancelTransactionOpen] = useState(false);
+  const [confirmCancelTransactionOpen, setConfirmCancelTransactionOpen] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const hasHydratedRef = useRef(false);
   const hasMounted = useSyncExternalStore(
     () => () => {},
@@ -3408,6 +3505,48 @@ export default function Home() {
     ]);
   };
 
+  const cancelSelectedTransaction = () => {
+    if (!selectedTransactionId) return;
+
+    const targetTransaction = transactions.find(
+      (transaction) => transaction.id === selectedTransactionId,
+    );
+    if (!targetTransaction) return;
+
+    setTransactions((current) =>
+      current.map((transaction) =>
+        transaction.id === targetTransaction.id
+          ? { ...transaction, cancelled: true }
+          : transaction,
+      ),
+    );
+
+    const delta =
+      targetTransaction.type === "earn"
+        ? -targetTransaction.amount
+        : targetTransaction.amount;
+    setAccountBalance((current) => current + delta);
+    setSelectedTransactionId(null);
+    setCancelTransactionOpen(false);
+    setConfirmCancelTransactionOpen(false);
+  };
+
+  const donateFromBalance = (amount: number) => {
+    if (amount <= 0 || amount > accountBalance) return;
+
+    setAccountBalance((current) => current - amount);
+    setTransactions((current) => [
+      {
+        id: createEntryId(),
+        type: "spend",
+        amount,
+        label: t("Donate"),
+        createdAt: Date.now(),
+      },
+      ...current,
+    ]);
+  };
+
   const spendForAssetPurchase = (amount: number, label: string) => {
     if (amount <= 0 || amount > accountBalance) return false;
 
@@ -3540,6 +3679,12 @@ export default function Home() {
       ...current,
     ]);
   };
+
+  const selectedTransaction =
+    selectedTransactionId === null
+      ? null
+      : transactions.find((transaction) => transaction.id === selectedTransactionId) ??
+        null;
 
   const renderedSelectedAvatarId = hasMounted ? selectedAvatarId : null;
   const renderedActiveTab = hasMounted ? activeTab : "dashboard";
@@ -3683,7 +3828,12 @@ export default function Home() {
             <AccountSection
               balance={accountBalance}
               netCashflow={netCashflow}
+              totalIncome={totalIncome}
               transactions={transactions}
+              selectedTransactionId={selectedTransactionId}
+              onSelectTransaction={(transactionId) => {
+                setSelectedTransactionId(transactionId);
+              }}
               onEarnCashflow={
                 renderedIsRatraceMode
                   ? () => {
@@ -3705,6 +3855,7 @@ export default function Home() {
                   : earnCashflow
               }
               onSpend={spendFromBalance}
+              onDonate={donateFromBalance}
             />
           )}
         </main>
@@ -3716,6 +3867,21 @@ export default function Home() {
             </DialogHeader>
 
             <div className="space-y-2 pt-2">
+              {renderedActiveTab === "account" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setSelectedTransactionId(null);
+                    setCancelTransactionOpen(true);
+                  }}
+                >
+                  {t("Cancel transaction")}
+                </Button>
+              ) : null}
+
               <Button
                 type="button"
                 variant="outline"
@@ -3728,6 +3894,133 @@ export default function Home() {
                 {t("Reset game")}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={cancelTransactionOpen} onOpenChange={setCancelTransactionOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("Cancel transaction")}</DialogTitle>
+              <DialogDescription>
+                {t("Select one transaction to cancel.")}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2 pt-2">
+              {transactions.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
+                  {t("No transactions yet.")}
+                </div>
+              ) : (
+                transactions.map((transaction) => {
+                  const isSelected = selectedTransactionId === transaction.id;
+                  const isCancelled = transaction.cancelled;
+
+                  return (
+                    <button
+                      key={transaction.id}
+                      type="button"
+                      disabled={isCancelled}
+                      onClick={() => {
+                        setSelectedTransactionId(transaction.id);
+                        setConfirmCancelTransactionOpen(true);
+                      }}
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                        isCancelled
+                          ? "cursor-not-allowed border-muted bg-muted/40 opacity-50"
+                          : isSelected
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-muted/50 hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className={`text-sm font-medium ${
+                            isCancelled ? "line-through text-muted-foreground" : "text-foreground"
+                          }`}
+                        >
+                          {transaction.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(transaction.createdAt).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </div>
+                      <div
+                        className={`text-sm font-semibold ${
+                          transaction.type === "earn"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        } ${isCancelled ? "line-through" : ""}`}
+                      >
+                        {transaction.type === "earn" ? "+" : "-"}
+                        {currencyFormatter.format(transaction.amount)}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCancelTransactionOpen(false);
+                  setSelectedTransactionId(null);
+                  setConfirmCancelTransactionOpen(false);
+                }}
+              >
+                {t("Close")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={confirmCancelTransactionOpen} onOpenChange={setConfirmCancelTransactionOpen}>
+          <DialogContent className="sm:max-w-xs">
+            <DialogHeader>
+              <DialogTitle>{t("Confirm cancellation")}</DialogTitle>
+              <DialogDescription>
+                {selectedTransaction
+                  ? `${t("Do you want to cancel this transaction?")}`
+                  : t("Select a transaction first.")}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedTransaction ? (
+              <div className="space-y-2 pt-2">
+                <p className="text-sm font-medium text-foreground">
+                  {selectedTransaction.label}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTransaction.type === "earn" ? t("Earning") : t("Spending")}: {currencyFormatter.format(selectedTransaction.amount)}
+                </p>
+              </div>
+            ) : null}
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setConfirmCancelTransactionOpen(false);
+                  setSelectedTransactionId(null);
+                }}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={cancelSelectedTransaction}
+                disabled={!selectedTransaction || selectedTransaction.cancelled}
+              >
+                {t("Confirm")}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
