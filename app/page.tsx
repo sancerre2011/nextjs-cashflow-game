@@ -17,6 +17,7 @@ import {
   Stethoscope,
   TrendingDown,
   Truck,
+  UserCircle2,
   Wallet,
   Wrench,
   type LucideIcon,
