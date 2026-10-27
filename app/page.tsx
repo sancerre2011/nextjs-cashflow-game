@@ -2654,7 +2654,7 @@ function AccountSection({
   };
 
   return (
-    <div className="grid min-h-[62dvh] grid-rows-2 gap-4">
+    <div className="flex min-h-[62dvh] flex-col gap-4">
       <Card className="overflow-hidden rounded-[1.75rem]">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl">{t("Account")}</CardTitle>
@@ -2795,17 +2795,17 @@ function AccountSection({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden rounded-[1.75rem]">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem]">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">{t("Transactions")}</CardTitle>
         </CardHeader>
-        <CardContent className="h-full pt-0">
+        <CardContent className="flex min-h-0 flex-1 flex-col pt-0">
           {transactions.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/50 px-3 py-3 text-sm text-muted-foreground">
               {t("No transactions yet.")}
             </div>
           ) : (
-            <div className="h-full space-y-2 overflow-y-auto pr-1">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
               {transactions.map((transaction) => {
                 const isSelected = selectedTransactionId === transaction.id;
                 const isCancelled = transaction.cancelled;
