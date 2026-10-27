@@ -2617,16 +2617,34 @@ function AccountSection({
   transactions: TransactionEntry[];
   selectedTransactionId: string | null;
   onSelectTransaction: (transactionId: string) => void;
-  onEarnCashflow: () => void;
+  onEarnCashflow: (amount?: number, label?: string) => void;
   onSpend: (amount: number) => void;
   onDonate: (amount: number) => void;
 }) {
   const { t, currencyFormatter, timeLocale } = useI18n();
+  const [earnOpen, setEarnOpen] = useState(false);
+  const [earnAmount, setEarnAmount] = useState("");
+  const [earnTitle, setEarnTitle] = useState("");
+  const [earnError, setEarnError] = useState("");
   const [spendOpen, setSpendOpen] = useState(false);
   const [spendAmount, setSpendAmount] = useState("");
   const [spendError, setSpendError] = useState("");
   const [donateOpen, setDonateOpen] = useState(false);
   const donationAmount = totalIncome * 0.1;
+
+  const submitEarn = () => {
+    const amount = parseNumericValue(earnAmount);
+    if (amount <= 0) {
+      setEarnError(t("Enter a valid amount."));
+      return;
+    }
+
+    onEarnCashflow(amount, earnTitle.trim() || t("Top up account"));
+    setEarnAmount("");
+    setEarnTitle("");
+    setEarnError("");
+    setEarnOpen(false);
+  };
 
   const submitSpend = () => {
     const amount = parseNumericValue(spendAmount);
@@ -2669,69 +2687,142 @@ function AccountSection({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
             <Button
               type="button"
               variant="default"
-              onClick={onEarnCashflow}
+              onClick={() => onEarnCashflow()}
               disabled={netCashflow <= 0}
-              className="h-10"
+              className="h-10 w-full"
             >
               {t("Earn cashflow")}
             </Button>
 
-            <Dialog open={spendOpen} onOpenChange={setSpendOpen}>
-              <DialogTrigger asChild>
-                <Button type="button" variant="outline" className="h-10">
-                  {t("Spend")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t("Spend amount")}</DialogTitle>
-                  <DialogDescription>
-                    {t("Enter the amount to remove from your balance.")}
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-2 pt-2">
-                  <Label htmlFor="spend-amount">{t("Amount")}</Label>
-                  <Input
-                    id="spend-amount"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="1"
-                    value={spendAmount}
-                    onChange={(event) => {
-                      setSpendAmount(event.target.value);
-                      if (spendError) setSpendError("");
-                    }}
-                    placeholder="0"
-                  />
-                  {spendError ? (
-                    <p className="text-sm text-destructive">{spendError}</p>
-                  ) : null}
-                </div>
-
-                <DialogFooter className="pt-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Dialog open={earnOpen} onOpenChange={setEarnOpen}>
+                <DialogTrigger asChild>
                   <Button
-                    variant="outline"
                     type="button"
-                    onClick={() => {
-                      setSpendOpen(false);
-                      setSpendAmount("");
-                      setSpendError("");
-                    }}
+                    variant="outline"
+                    className="h-10 border-emerald-500 text-emerald-600 hover:border-emerald-600 hover:text-emerald-700 dark:border-emerald-400 dark:text-emerald-300 dark:hover:border-emerald-300 dark:hover:text-emerald-200"
                   >
-                    {t("Cancel")}
+                    {t("Top up")}
                   </Button>
-                  <Button type="button" onClick={submitSpend}>
-                    {t("Confirm")}
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("Top up account")}</DialogTitle>
+                    <DialogDescription>
+                      {t("Enter the amount to add to your balance.")}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="earn-amount">{t("Amount")}</Label>
+                    <Input
+                      id="earn-amount"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="1"
+                      value={earnAmount}
+                      onChange={(event) => {
+                        setEarnAmount(event.target.value);
+                        if (earnError) setEarnError("");
+                      }}
+                      placeholder="0"
+                    />
+                    {earnError ? (
+                      <p className="text-sm text-destructive">{earnError}</p>
+                    ) : null}
+
+                    <Label htmlFor="earn-title">{t("Title (optional)")}</Label>
+                    <Input
+                      id="earn-title"
+                      type="text"
+                      value={earnTitle}
+                      onChange={(event) => setEarnTitle(event.target.value)}
+                      placeholder={t("Top up account")}
+                    />
+                  </div>
+
+                  <DialogFooter className="pt-2">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => {
+                        setEarnOpen(false);
+                        setEarnAmount("");
+                        setEarnTitle("");
+                        setEarnError("");
+                      }}
+                    >
+                      {t("Cancel")}
+                    </Button>
+                    <Button type="button" onClick={submitEarn}>
+                      {t("Confirm")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={spendOpen} onOpenChange={setSpendOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 border-red-500 text-red-600 hover:border-red-600 hover:text-red-700 dark:border-red-400 dark:text-red-300 dark:hover:border-red-300 dark:hover:text-red-200"
+                  >
+                    {t("Spend")}
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("Spend amount")}</DialogTitle>
+                    <DialogDescription>
+                      {t("Enter the amount to remove from your balance.")}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="spend-amount">{t("Amount")}</Label>
+                    <Input
+                      id="spend-amount"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="1"
+                      value={spendAmount}
+                      onChange={(event) => {
+                        setSpendAmount(event.target.value);
+                        if (spendError) setSpendError("");
+                      }}
+                      placeholder="0"
+                    />
+                    {spendError ? (
+                      <p className="text-sm text-destructive">{spendError}</p>
+                    ) : null}
+                  </div>
+
+                  <DialogFooter className="pt-2">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => {
+                        setSpendOpen(false);
+                        setSpendAmount("");
+                        setSpendError("");
+                      }}
+                    >
+                      {t("Cancel")}
+                    </Button>
+                    <Button type="button" onClick={submitSpend}>
+                      {t("Confirm")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
@@ -3473,16 +3564,16 @@ export default function Home() {
     ]);
   };
 
-  const earnCashflow = () => {
-    if (netCashflow <= 0) return;
+  const earnCashflow = (amount: number = netCashflow, label?: string) => {
+    if (amount <= 0) return;
 
-    setAccountBalance((current) => current + netCashflow);
+    setAccountBalance((current) => current + amount);
     setTransactions((current) => [
       {
         id: createEntryId(),
         type: "earn",
-        amount: netCashflow,
-        label: t("Earn cashflow"),
+        amount,
+        label: label ?? t("Earn cashflow"),
         createdAt: Date.now(),
       },
       ...current,
@@ -3837,17 +3928,15 @@ export default function Home() {
               }}
               onEarnCashflow={
                 renderedIsRatraceMode
-                  ? () => {
-                      if (ratRaceCashflowIncome <= 0) return;
-                      setAccountBalance(
-                        (current) => current + ratRaceCashflowIncome,
-                      );
+                  ? (amount: number = ratRaceCashflowIncome, label?: string) => {
+                      if (amount <= 0) return;
+                      setAccountBalance((current) => current + amount);
                       setTransactions((current) => [
                         {
                           id: createEntryId(),
                           type: "earn",
-                          amount: ratRaceCashflowIncome,
-                          label: t("Earn cashflow income"),
+                          amount,
+                          label: label ?? t("Earn cashflow income"),
                           createdAt: Date.now(),
                         },
                         ...current,
