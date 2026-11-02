@@ -37,6 +37,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { applyFundSplit } from "@/lib/fund-split";
 import {
   Dialog,
   DialogContent,
@@ -787,6 +788,12 @@ function AssetSection({
   const [sellingFundId, setSellingFundId] = useState("");
   const [sellFundShares, setSellFundShares] = useState("");
   const [sellFundPricePerShare, setSellFundPricePerShare] = useState("");
+  const [splitFundId, setSplitFundId] = useState("");
+  const [splitDirection, setSplitDirection] = useState<"split" | "reverse">(
+    "split",
+  );
+  const [fundSplitOpen, setFundSplitOpen] = useState(false);
+  const [fundSplitError, setFundSplitError] = useState("");
   const [sellingRealEstateId, setSellingRealEstateId] = useState("");
   const [sellRealEstatePrice, setSellRealEstatePrice] = useState("");
   const sellPreciousValue = useMemo(
@@ -801,6 +808,14 @@ function AssetSection({
       parseNumericValue(sellFundPricePerShare),
     [sellFundShares, sellFundPricePerShare],
   );
+  const selectedFundForSplit = useMemo(
+    () => funds.find((entry) => entry.id === splitFundId) ?? null,
+    [funds, splitFundId],
+  );
+  const splitPreview = useMemo(() => {
+    if (!selectedFundForSplit) return null;
+    return applyFundSplit(selectedFundForSplit, splitDirection);
+  }, [selectedFundForSplit, splitDirection]);
   const selectedRealEstateForSale = useMemo(
     () =>
       realEstateAssets.find((entry) => entry.id === sellingRealEstateId) ??
@@ -1105,6 +1120,55 @@ function AssetSection({
     });
     setFundBuyError("");
     setFundOpen(false);
+  };
+
+  const openSplitFundEntry = (entry: FundEntry) => {
+    setSplitFundId(entry.id);
+    setSplitDirection("split");
+    setFundSplitError("");
+    setFundSplitOpen(true);
+  };
+
+  const confirmSplitFundEntry = () => {
+    const selected = funds.find((entry) => entry.id === splitFundId);
+    if (!selected) {
+      setFundSplitError(t("Selected entry is no longer available."));
+      return;
+    }
+
+    const currentShares = parseNumericValue(selected.shares);
+    const currentCostPerShare = parseNumericValue(selected.costPerShare);
+    if (currentShares <= 0 || currentCostPerShare <= 0) {
+      setFundSplitError(t("Selected fund has no valid share data to split."));
+      return;
+    }
+
+    const updated = applyFundSplit(selected, splitDirection);
+    if (!updated) {
+      setFundSplitError(t("Selected fund has no valid share data to split."));
+      return;
+    }
+
+    setFunds((current) =>
+      current
+        .map((entry) =>
+          entry.id === selected.id ? { ...entry, ...updated } : entry,
+        )
+        .filter((entry) => parseNumericValue(entry.shares) > 0),
+    );
+
+    if (parseNumericValue(updated.shares) <= 0) {
+      setFundIncomeEntries((current) =>
+        current.filter(
+          (entry) =>
+            entry.name.trim().toLowerCase() !== selected.name.trim().toLowerCase(),
+        ),
+      );
+    }
+
+    setSplitFundId("");
+    setFundSplitError("");
+    setFundSplitOpen(false);
   };
 
   const openSellFundEntry = (entry: FundEntry) => {
@@ -1804,6 +1868,14 @@ function AssetSection({
                     type="button"
                     variant="outline"
                     size="sm"
+                    onClick={() => openSplitFundEntry(entry)}
+                  >
+                    {t("Split")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => openSellFundEntry(entry)}
                   >
                     {t("Sell")}
@@ -1812,6 +1884,124 @@ function AssetSection({
               </div>
             ))
           )}
+
+          <Dialog
+            open={fundSplitOpen}
+            onOpenChange={(open) => {
+              setFundSplitOpen(open);
+              if (!open) {
+                setSplitFundId("");
+                setFundSplitError("");
+              }
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("Adjust stock split")}</DialogTitle>
+                <DialogDescription>
+                  {t("Choose a stock split or reverse split and review the result.")}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={splitDirection === "split" ? "default" : "outline"}
+                    onClick={() => setSplitDirection("split")}
+                  >
+                    {t("Split")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      splitDirection === "reverse" ? "default" : "outline"
+                    }
+                    onClick={() => setSplitDirection("reverse")}
+                  >
+                    {t("Reverse split")}
+                  </Button>
+                </div>
+
+                {selectedFundForSplit ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="split-fund-current">
+                        {t("Current shares")}
+                      </Label>
+                      <Input
+                        id="split-fund-current"
+                        value={`${selectedFundForSplit.shares || "0"} @ ${currencyFormatter.format(parseNumericValue(selectedFundForSplit.costPerShare || "0"))}`}
+                        readOnly
+                      />
+                    </div>
+
+                    {splitPreview ? (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="split-fund-new-shares">
+                            {t("New shares")}
+                          </Label>
+                          <Input
+                            id="split-fund-new-shares"
+                            value={splitPreview.shares}
+                            readOnly
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label htmlFor="split-fund-new-cost">
+                            {t("New cost / share")}
+                          </Label>
+                          <Input
+                            id="split-fund-new-cost"
+                            value={currencyFormatter.format(
+                              parseNumericValue(splitPreview.costPerShare || "0"),
+                            )}
+                            readOnly
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label htmlFor="split-fund-new-value">
+                            {t("New value")}
+                          </Label>
+                          <Input
+                            id="split-fund-new-value"
+                            value={currencyFormatter.format(
+                              parseNumericValue(splitPreview.value || "0"),
+                            )}
+                            readOnly
+                          />
+                        </div>
+                      </>
+                    ) : null}
+                  </>
+                ) : null}
+
+                {fundSplitError ? (
+                  <p className="text-sm text-destructive">{fundSplitError}</p>
+                ) : null}
+              </div>
+
+              <DialogFooter className="pt-2">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => {
+                    setFundSplitOpen(false);
+                    setSplitFundId("");
+                    setFundSplitError("");
+                  }}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button type="button" onClick={confirmSplitFundEntry}>
+                  {splitDirection === "split" ? t("Split") : t("Reverse split")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <Dialog
             open={fundSellOpen}
