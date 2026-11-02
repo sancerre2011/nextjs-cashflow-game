@@ -2667,27 +2667,52 @@ function RatRaceDashboardSection({
   cashflowIncome,
   businesses,
   onBuyBusiness,
+  accountBalance,
   targetCashflowIncome,
   differenceToTarget,
 }: {
   cashflowIncome: number;
   businesses: BusinessEntry[];
-  onBuyBusiness: (name: string, cashFlow: string) => void;
+  onBuyBusiness: (
+    name: string,
+    cashFlow: string,
+    purchasePrice: string,
+  ) => string | null;
+  accountBalance: number;
   targetCashflowIncome: number;
   differenceToTarget: number;
 }) {
   const { t, currencyFormatter } = useI18n();
   const [businessName, setBusinessName] = useState("");
   const [businessCashFlow, setBusinessCashFlow] = useState("");
+  const [businessPurchasePrice, setBusinessPurchasePrice] = useState("");
+  const [buyBusinessError, setBuyBusinessError] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const parsedPurchasePrice = parseNumericValue(businessPurchasePrice);
 
   const handleConfirm = () => {
     const trimmedName = businessName.trim();
-    if (!trimmedName || businessCashFlow.trim() === "") return;
+    if (
+      !trimmedName ||
+      businessCashFlow.trim() === "" ||
+      businessPurchasePrice.trim() === ""
+    )
+      return;
 
-    onBuyBusiness(trimmedName, businessCashFlow);
+    const error = onBuyBusiness(
+      trimmedName,
+      businessCashFlow,
+      businessPurchasePrice,
+    );
+    if (error) {
+      setBuyBusinessError(error);
+      return;
+    }
+
     setBusinessName("");
     setBusinessCashFlow("");
+    setBusinessPurchasePrice("");
+    setBuyBusinessError("");
     setDialogOpen(false);
   };
 
@@ -2738,7 +2763,18 @@ function RatRaceDashboardSection({
             <div className="text-sm font-semibold text-foreground">
               {t("Businesses")}
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) {
+                  setBusinessName("");
+                  setBusinessCashFlow("");
+                  setBusinessPurchasePrice("");
+                  setBuyBusinessError("");
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button type="button" size="sm">
                   {t("Buy business")}
@@ -2778,13 +2814,51 @@ function RatRaceDashboardSection({
                       placeholder="1500"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="business-purchase-price">
+                      {t("Price")}
+                    </Label>
+                    <Input
+                      id="business-purchase-price"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="100"
+                      value={businessPurchasePrice}
+                      onChange={(event) => {
+                        setBusinessPurchasePrice(event.target.value);
+                        if (buyBusinessError) setBuyBusinessError("");
+                      }}
+                      placeholder="25000"
+                    />
+                  </div>
+
+                  {buyBusinessError ? (
+                    <p className="text-sm text-destructive">
+                      {buyBusinessError}
+                    </p>
+                  ) : null}
+                  {!buyBusinessError &&
+                  parsedPurchasePrice > 0 &&
+                  parsedPurchasePrice > accountBalance ? (
+                    <p className="text-sm text-destructive">
+                      {t("Not enough balance.")}
+                    </p>
+                  ) : null}
                 </div>
 
                 <DialogFooter className="pt-2">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setDialogOpen(false)}
+                    onClick={() => {
+                      setDialogOpen(false);
+                      setBusinessName("");
+                      setBusinessCashFlow("");
+                      setBusinessPurchasePrice("");
+                      setBuyBusinessError("");
+                    }}
                   >
                     {t("Cancel")}
                   </Button>
@@ -2792,7 +2866,11 @@ function RatRaceDashboardSection({
                     type="button"
                     onClick={handleConfirm}
                     disabled={
-                      !businessName.trim() || businessCashFlow.trim() === ""
+                      !businessName.trim() ||
+                      businessCashFlow.trim() === "" ||
+                      businessPurchasePrice.trim() === "" ||
+                      parsedPurchasePrice <= 0 ||
+                      parsedPurchasePrice > accountBalance
                     }
                   >
                     {t("Buy")}
@@ -3799,27 +3877,29 @@ export default function Home() {
     setActiveTab("dashboard");
   };
 
-  const buyBusiness = (name: string, cashFlow: string) => {
+  const buyBusiness = (name: string, cashFlow: string, purchasePrice: string) => {
+    const parsedPurchasePrice = parseNumericValue(purchasePrice);
+    if (parsedPurchasePrice <= 0) {
+      return t("Enter a valid value.");
+    }
+
+    if (
+      !spendForAssetPurchase(
+        parsedPurchasePrice,
+        `${t("Buy business: ")}${name}`,
+      )
+    ) {
+      return t("Not enough balance.");
+    }
+
     const nextBusiness: BusinessEntry = {
       id: createEntryId(),
       name,
       cashFlow,
     };
 
-    const parsedCashFlow = parseNumericValue(cashFlow);
-
     setBusinessEntries((current) => [...current, nextBusiness]);
-    setAccountBalance((current) => current + parsedCashFlow);
-    setTransactions((current) => [
-      {
-        id: createEntryId(),
-        type: "earn",
-        amount: parsedCashFlow,
-        label: `${t("Buy business: ")}${name}`,
-        createdAt: Date.now(),
-      },
-      ...current,
-    ]);
+    return null;
   };
 
   const earnCashflow = (amount: number = netCashflow, label?: string) => {
@@ -4095,6 +4175,7 @@ export default function Home() {
                 cashflowIncome={ratRaceCashflowIncome}
                 businesses={businessEntries}
                 onBuyBusiness={buyBusiness}
+                accountBalance={accountBalance}
                 targetCashflowIncome={targetCashflowIncome}
                 differenceToTarget={differenceToTarget}
               />
