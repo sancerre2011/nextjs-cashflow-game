@@ -776,6 +776,7 @@ function AssetSection({
   const [realEstateOpen, setRealEstateOpen] = useState(false);
   const [realEstateSellOpen, setRealEstateSellOpen] = useState(false);
   const [preciousBuyError, setPreciousBuyError] = useState("");
+  const [preciousGiftMode, setPreciousGiftMode] = useState(false);
   const [preciousSellError, setPreciousSellError] = useState("");
   const [fundBuyError, setFundBuyError] = useState("");
   const [fundSellError, setFundSellError] = useState("");
@@ -899,6 +900,37 @@ function AssetSection({
     const trimmedName = preciousDraft.name.trim();
     if (!trimmedName) return;
 
+    if (preciousGiftMode) {
+      const giftedPieces = parseNumericValue(preciousDraft.pieces);
+      if (giftedPieces <= 0) {
+        setPreciousBuyError(t("Enter a valid number of pieces."));
+        return;
+      }
+
+      setPreciousMetals((current) => [
+        ...current,
+        {
+          ...preciousDraft,
+          id: createEntryId(),
+          name: trimmedName,
+          pieces: String(giftedPieces),
+          pricePerPiece: "0",
+          value: "0",
+        },
+      ]);
+      setPreciousDraft({
+        id: "",
+        name: "",
+        pieces: "",
+        pricePerPiece: "",
+        value: "",
+      });
+      setPreciousGiftMode(false);
+      setPreciousBuyError("");
+      setPreciousMetalOpen(false);
+      return;
+    }
+
     const purchaseAmount = parseNumericValue(preciousDraft.value);
     if (purchaseAmount <= 0) {
       setPreciousBuyError(t("Enter a valid value."));
@@ -930,6 +962,7 @@ function AssetSection({
       pricePerPiece: "",
       value: "",
     });
+    setPreciousGiftMode(false);
     setPreciousBuyError("");
     setPreciousMetalOpen(false);
   };
@@ -1442,7 +1475,10 @@ function AssetSection({
             open={preciousMetalOpen}
             onOpenChange={(open) => {
               setPreciousMetalOpen(open);
-              if (!open) setPreciousBuyError("");
+              if (!open) {
+                setPreciousBuyError("");
+                setPreciousGiftMode(false);
+              }
             }}
           >
             <DialogTrigger asChild>
@@ -1460,6 +1496,27 @@ function AssetSection({
               </DialogHeader>
 
               <div className="space-y-3 pt-2">
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant={preciousGiftMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setPreciousGiftMode((current) => !current);
+                      setPreciousBuyError("");
+                      if (preciousGiftMode) {
+                        setPreciousDraft((current) => ({
+                          ...current,
+                          pricePerPiece: "",
+                          value: "",
+                        }));
+                      }
+                    }}
+                  >
+                    {t("Gift / free acquisition")}
+                  </Button>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="precious-name">{t("Name")}</Label>
                   <Input
@@ -1489,42 +1546,50 @@ function AssetSection({
                     />
                   </div>
 
+                  {!preciousGiftMode ? (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="precious-price">{t("Price / piece")}</Label>
+                      <Input
+                        id="precious-price"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={preciousDraft.pricePerPiece}
+                        onChange={(event) =>
+                          updatePreciousDraft("pricePerPiece", event.target.value)
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                {!preciousGiftMode ? (
                   <div className="space-y-1.5">
-                    <Label htmlFor="precious-price">{t("Price / piece")}</Label>
+                    <Label htmlFor="precious-value">{t("Value")}</Label>
                     <Input
-                      id="precious-price"
+                      id="precious-value"
                       type="number"
                       inputMode="decimal"
                       min="0"
                       step="0.01"
-                      value={preciousDraft.pricePerPiece}
+                      value={preciousDraft.value}
                       onChange={(event) =>
-                        updatePreciousDraft("pricePerPiece", event.target.value)
+                        updatePreciousDraft("value", event.target.value)
                       }
                       placeholder="0"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="precious-value">{t("Value")}</Label>
-                  <Input
-                    id="precious-value"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={preciousDraft.value}
-                    onChange={(event) =>
-                      updatePreciousDraft("value", event.target.value)
-                    }
-                    placeholder="0"
-                  />
-                </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {t("Gifted metals are recorded with zero value and no cost deduction.")}
+                  </p>
+                )}
                 {preciousBuyError ? (
                   <p className="text-sm text-destructive">{preciousBuyError}</p>
                 ) : null}
-                {!preciousBuyError &&
+                {!preciousGiftMode && !preciousBuyError &&
                 preciousPurchaseAmount > accountBalance ? (
                   <p className="text-sm text-destructive">
                     {t("Not enough balance.")}
@@ -1539,6 +1604,7 @@ function AssetSection({
                   onClick={() => {
                     setPreciousMetalOpen(false);
                     setPreciousBuyError("");
+                    setPreciousGiftMode(false);
                   }}
                 >
                   {t("Cancel")}
@@ -1548,8 +1614,10 @@ function AssetSection({
                   onClick={savePreciousMetal}
                   disabled={
                     !preciousDraft.name.trim() ||
-                    preciousPurchaseAmount <= 0 ||
-                    preciousPurchaseAmount > accountBalance
+                    (preciousGiftMode
+                      ? parseNumericValue(preciousDraft.pieces) <= 0
+                      : preciousPurchaseAmount <= 0 ||
+                        preciousPurchaseAmount > accountBalance)
                   }
                 >
                   {t("Save")}
