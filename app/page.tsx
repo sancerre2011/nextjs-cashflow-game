@@ -2667,6 +2667,7 @@ function RatRaceDashboardSection({
   cashflowIncome,
   businesses,
   onBuyBusiness,
+  onSellBusiness,
   accountBalance,
   targetCashflowIncome,
   differenceToTarget,
@@ -2678,6 +2679,7 @@ function RatRaceDashboardSection({
     cashFlow: string,
     purchasePrice: string,
   ) => string | null;
+  onSellBusiness: (businessId: string, salePrice: string) => string | null;
   accountBalance: number;
   targetCashflowIncome: number;
   differenceToTarget: number;
@@ -2688,6 +2690,10 @@ function RatRaceDashboardSection({
   const [businessPurchasePrice, setBusinessPurchasePrice] = useState("");
   const [buyBusinessError, setBuyBusinessError] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sellBusinessOpen, setSellBusinessOpen] = useState(false);
+  const [businessIdForSale, setBusinessIdForSale] = useState<string | null>(null);
+  const [sellBusinessPrice, setSellBusinessPrice] = useState("");
+  const [sellBusinessError, setSellBusinessError] = useState("");
   const parsedPurchasePrice = parseNumericValue(businessPurchasePrice);
 
   const handleConfirm = () => {
@@ -2714,6 +2720,30 @@ function RatRaceDashboardSection({
     setBusinessPurchasePrice("");
     setBuyBusinessError("");
     setDialogOpen(false);
+  };
+
+  const handleSellConfirm = () => {
+    if (!businessIdForSale || sellBusinessPrice.trim() === "") {
+      setSellBusinessError(t("Enter a valid sell price."));
+      return;
+    }
+
+    const saleAmount = parseNumericValue(sellBusinessPrice);
+    if (saleAmount < 0) {
+      setSellBusinessError(t("Enter a valid sell price."));
+      return;
+    }
+
+    const error = onSellBusiness(businessIdForSale, sellBusinessPrice);
+    if (error) {
+      setSellBusinessError(error);
+      return;
+    }
+
+    setBusinessIdForSale(null);
+    setSellBusinessPrice("");
+    setSellBusinessError("");
+    setSellBusinessOpen(false);
   };
 
   return (
@@ -2894,10 +2924,25 @@ function RatRaceDashboardSection({
                   <div className="flex-1 text-sm font-medium text-foreground">
                     {business.name}
                   </div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {currencyFormatter.format(
-                      parseNumericValue(business.cashFlow),
-                    )}
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <span>
+                      {currencyFormatter.format(
+                        parseNumericValue(business.cashFlow),
+                      )}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setBusinessIdForSale(business.id);
+                        setSellBusinessPrice("");
+                        setSellBusinessError("");
+                        setSellBusinessOpen(true);
+                      }}
+                    >
+                      {t("Sell")}
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -2905,6 +2950,71 @@ function RatRaceDashboardSection({
           )}
         </div>
       </CardContent>
+      <Dialog
+        open={sellBusinessOpen}
+        onOpenChange={(open) => {
+          setSellBusinessOpen(open);
+          if (!open) {
+            setBusinessIdForSale(null);
+            setSellBusinessPrice("");
+            setSellBusinessError("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Sell business")}</DialogTitle>
+            <DialogDescription>
+              {t("Enter the sell price for this business.")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="sell-business-price">{t("Sell price")}</Label>
+              <Input
+                id="sell-business-price"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="1"
+                value={sellBusinessPrice}
+                onChange={(event) => {
+                  setSellBusinessPrice(event.target.value);
+                  if (sellBusinessError) setSellBusinessError("");
+                }}
+                placeholder="0"
+              />
+            </div>
+
+            {sellBusinessError ? (
+              <p className="text-sm text-destructive">{sellBusinessError}</p>
+            ) : null}
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setSellBusinessOpen(false);
+                setBusinessIdForSale(null);
+                setSellBusinessPrice("");
+                setSellBusinessError("");
+              }}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSellConfirm}
+              disabled={sellBusinessPrice.trim() === ""}
+            >
+              {t("Confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -3902,6 +4012,55 @@ export default function Home() {
     return null;
   };
 
+  const sellBusiness = (businessId: string, salePrice: string) => {
+    const selectedBusiness = businessEntries.find(
+      (entry) => entry.id === businessId,
+    );
+    if (!selectedBusiness) {
+      return t("Selected business is no longer available.");
+    }
+
+    const saleAmount = parseNumericValue(salePrice);
+    if (salePrice.trim() === "") {
+      return t("Enter a valid sell price.");
+    }
+    if (saleAmount < 0) {
+      return t("Enter a valid sell price.");
+    }
+
+    setBusinessEntries((current) =>
+      current.filter((entry) => entry.id !== businessId),
+    );
+
+    const saleLabel = `${t("Sell business: ")}${selectedBusiness.name || t("Unnamed")}`;
+    if (saleAmount > 0) {
+      setAccountBalance((current) => current + saleAmount);
+      setTransactions((current) => [
+        {
+          id: createEntryId(),
+          type: "earn",
+          amount: saleAmount,
+          label: saleLabel,
+          createdAt: Date.now(),
+        },
+        ...current,
+      ]);
+      return null;
+    }
+
+    setTransactions((current) => [
+      {
+        id: createEntryId(),
+        type: "earn",
+        amount: 0,
+        label: saleLabel,
+        createdAt: Date.now(),
+      },
+      ...current,
+    ]);
+    return null;
+  };
+
   const earnCashflow = (amount: number = netCashflow, label?: string) => {
     if (amount <= 0) return;
 
@@ -4175,6 +4334,7 @@ export default function Home() {
                 cashflowIncome={ratRaceCashflowIncome}
                 businesses={businessEntries}
                 onBuyBusiness={buyBusiness}
+                onSellBusiness={sellBusiness}
                 accountBalance={accountBalance}
                 targetCashflowIncome={targetCashflowIncome}
                 differenceToTarget={differenceToTarget}
